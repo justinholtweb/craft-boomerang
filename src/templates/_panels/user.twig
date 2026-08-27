@@ -1,0 +1,11 @@
+<div class="meta">
+    <div class="data">
+        <h5 class="heading">{{ 'Store credit'|t('boomerang') }}</h5>
+        <div class="value">
+            <a href="{{ url('boomerang/credit/' ~ user.id) }}">{{ balance|number_format(2) }}</a>
+            {% if lots|length %}
+                <span class="light">({{ '{n} lots'|t('boomerang', { n: lots|length }) }})</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

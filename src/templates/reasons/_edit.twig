@@ -1,0 +1,75 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = isNew ? 'New reason'|t('boomerang') : reason.name %}
+{% set selectedSubnavItem = 'reasons' %}
+{% set crumbs = [{ label: 'Return reasons'|t('boomerang'), url: url('boomerang/reasons') }] %}
+{% set fullPageForm = true %}
+
+{% block content %}
+    {{ actionInput('boomerang/reasons/save') }}
+    {{ redirectInput('boomerang/reasons') }}
+    {% if not isNew %}{{ hiddenInput('reasonId', reason.id) }}{% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('app'),
+        name: 'name',
+        value: reason.name,
+        errors: reason.getErrors('name'),
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('app'),
+        name: 'handle',
+        value: reason.handle,
+        errors: reason.getErrors('handle'),
+        required: true,
+        class: 'code',
+    }) }}
+
+    {{ forms.textareaField({
+        label: 'Description'|t('app'),
+        name: 'description',
+        value: reason.description,
+        rows: 2,
+        instructions: 'Shown under the reason on the portal.'|t('boomerang'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Goods arrive as'|t('boomerang'),
+        name: 'defaultCondition',
+        options: conditions,
+        value: reason.defaultCondition,
+        instructions: 'What the items are assumed to be in until somebody looks at them. This decides which shelf they go back on when the return is restocked.'|t('boomerang'),
+    }) }}
+
+    <hr>
+
+    {{ forms.lightswitchField({ label: 'Enabled'|t('app'), name: 'enabled', on: reason.enabled }) }}
+    {{ forms.lightswitchField({ label: 'Customers can choose it'|t('boomerang'), name: 'customerSelectable', on: reason.customerSelectable }) }}
+    {{ forms.lightswitchField({ label: 'Needs a comment'|t('boomerang'), name: 'requiresComment', on: reason.requiresComment }) }}
+    {{ forms.lightswitchField({ label: 'Needs a photo'|t('boomerang'), name: 'requiresPhoto', on: reason.requiresPhoto }) }}
+
+    <hr>
+
+    {{ forms.lightswitchField({
+        label: 'This is our fault'|t('boomerang'),
+        name: 'isFault',
+        on: reason.isFault,
+        instructions: 'Waives the restocking fee, and separates “we got it wrong” from “they ordered two sizes on purpose” in the reports. That split is the whole point of recording reasons.'|t('boomerang'),
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Approve automatically'|t('boomerang'),
+        name: 'autoApprove',
+        on: reason.autoApprove,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'We pay the return postage'|t('boomerang'),
+        name: 'freeReturnShipping',
+        on: reason.freeReturnShipping,
+    }) }}
+{% endblock %}

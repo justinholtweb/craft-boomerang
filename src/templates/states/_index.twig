@@ -1,0 +1,54 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Return states'|t('boomerang') %}
+{% set selectedSubnavItem = 'states' %}
+
+{% block actionButton %}
+    <a href="{{ url('boomerang/states/new') }}" class="btn submit add icon">{{ 'New state'|t('boomerang') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="light">
+        {{ 'The vocabulary is yours. The **kind** is what the plugin reads — whether a return here is approved, received, finished with — so renaming “Approved” to “Authorised” is a label change and not a bug.'|t('boomerang')|md }}
+    </p>
+
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>{{ 'Name'|t('app') }}</th>
+                <th>{{ 'Handle'|t('app') }}</th>
+                <th>{{ 'Kind'|t('boomerang') }}</th>
+                <th>{{ 'Moves to'|t('boomerang') }}</th>
+                <th>{{ 'On arrival'|t('boomerang') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for state in states %}
+                <tr>
+                    <td>
+                        <span class="status {{ state.color }}"></span>
+                        <a href="{{ state.cpEditUrl }}">{{ state.name }}</a>
+                        {% if state.isDefault %}<span class="status-label">{{ 'Default'|t('boomerang') }}</span>{% endif %}
+                    </td>
+                    <td><code>{{ state.handle }}</code></td>
+                    <td>{{ state.getKind().label }}</td>
+                    <td class="light">
+                        {%- if state.transitions|length -%}
+                            {{ state.availableTransitions|map(t => t.name)|join(', ') }}
+                        {%- else -%}
+                            {{ 'Anywhere'|t('boomerang') }}
+                        {%- endif -%}
+                    </td>
+                    <td class="light">
+                        {%- set flags = [] -%}
+                        {%- if state.restockOnEnter %}{% set flags = flags|merge(['Restocks'|t('boomerang')]) %}{% endif -%}
+                        {%- if state.resolveOnEnter %}{% set flags = flags|merge(['Pays the customer'|t('boomerang')]) %}{% endif -%}
+                        {%- if state.notifyCustomer %}{% set flags = flags|merge(['Emails the customer'|t('boomerang')]) %}{% endif -%}
+                        {%- if state.offerLabel %}{% set flags = flags|merge(['Offers a label'|t('boomerang')]) %}{% endif -%}
+                        {{ flags|join(' · ') }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

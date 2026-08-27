@@ -1,0 +1,49 @@
+{% extends 'boomerang/_emails/_base' %}
+
+{% block subject %}{{ 'Your return {reference}'|t('boomerang', { reference: return.reference }) }}{% endblock %}
+
+{% block body %}
+    <h1 style="font-size:20px;margin:0 0 12px;">
+        {{ 'Your return is now {state}'|t('boomerang', { state: state ? state.name : '' }) }}
+    </h1>
+
+    <p style="margin:0 0 16px;">
+        {{ 'Return {reference}, for order {order}.'|t('boomerang', {
+            reference: return.reference,
+            order: return.orderReference ?? return.orderNumber[:7]
+        }) }}
+    </p>
+
+    {% if state and state.description %}
+        <p style="margin:0 0 16px;">{{ state.description }}</p>
+    {% endif %}
+
+    <table style="width:100%;border-collapse:collapse;margin:0 0 16px;">
+        {% for item in items %}
+            <tr>
+                <td style="padding:6px 0;border-top:1px solid #eee;">
+                    {{ item.description }}<br>
+                    <span style="color:#767676;font-size:14px;">{{ item.sku }} · {{ item.reasonLabel }}</span>
+                </td>
+                <td style="padding:6px 0;border-top:1px solid #eee;text-align:right;white-space:nowrap;">× {{ item.qtyRequested }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    {% if return.resolutionAmount > 0 and return.state and return.state.isResolved %}
+        <p style="margin:0 0 16px;">
+            {{ '{amount} has been sent back to you as {how}.'|t('boomerang', {
+                amount: return.resolutionAmount|commerceCurrency(return.currency ?? 'USD'),
+                how: return.getResolution().label|lower
+            }) }}
+        </p>
+    {% endif %}
+
+    {% if return.portalUrl %}
+        <p style="margin:0;">
+            <a href="{{ return.portalUrl }}" style="display:inline-block;padding:10px 18px;background:#1b1b1b;color:#fff;border-radius:6px;text-decoration:none;">
+                {{ 'See your return'|t('boomerang') }}
+            </a>
+        </p>
+    {% endif %}
+{% endblock %}

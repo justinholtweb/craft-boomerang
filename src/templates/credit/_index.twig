@@ -1,0 +1,62 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Store credit'|t('boomerang') %}
+{% set selectedSubnavItem = 'credit' %}
+
+{% block content %}
+    <div class="pane">
+        <div class="flex">
+            <div>
+                <h5 class="heading">{{ 'Outstanding'|t('boomerang') }}</h5>
+                <p style="font-size: 1.5rem; margin: 0;">{{ totals.outstanding|commerceCurrency(craft.app.projectConfig.get('commerce.defaultCurrency') ?? 'USD') }}</p>
+            </div>
+            <div>
+                <h5 class="heading">{{ 'Issued'|t('boomerang') }}</h5>
+                <p style="font-size: 1.5rem; margin: 0;">{{ totals.issued|number_format(2) }}</p>
+            </div>
+            <div>
+                <h5 class="heading">{{ 'Spent'|t('boomerang') }}</h5>
+                <p style="font-size: 1.5rem; margin: 0;">{{ totals.spent|number_format(2) }}</p>
+            </div>
+            <div>
+                <h5 class="heading">{{ 'Redeemed'|t('boomerang') }}</h5>
+                <p style="font-size: 1.5rem; margin: 0;">{{ totals.redemptionRate is not null ? totals.redemptionRate ~ '%' : '—' }}</p>
+            </div>
+            <div>
+                <h5 class="heading">{{ 'Expired'|t('boomerang') }}</h5>
+                <p style="font-size: 1.5rem; margin: 0;">{{ totals.expired|number_format(2) }}</p>
+            </div>
+        </div>
+        <p class="light" style="margin: .75rem 0 0;">
+            {{ 'Credit issued and never redeemed is revenue the store kept. Credit redeemed is a customer who came back — which is the argument for offering it.'|t('boomerang') }}
+        </p>
+    </div>
+
+    <table class="data fullwidth" style="margin-top: 14px;">
+        <thead>
+            <tr>
+                <th>{{ 'Customer'|t('boomerang') }}</th>
+                <th>{{ 'Balance'|t('boomerang') }}</th>
+                <th>{{ 'Lots'|t('boomerang') }}</th>
+                <th>{{ 'Next expiry'|t('boomerang') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                {% set user = users[row.customerId] ?? null %}
+                <tr>
+                    <td>
+                        <a href="{{ url('boomerang/credit/' ~ row.customerId) }}">
+                            {{ user ? user.uiLabel : 'User #' ~ row.customerId }}
+                        </a>
+                    </td>
+                    <td>{{ row.balance|number_format(2) }} {{ row.currency }}</td>
+                    <td class="light">{{ row.lots }}</td>
+                    <td class="light">{{ row.nextExpiry ? row.nextExpiry|date('Y-m-d') : '—' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4" class="light">{{ 'Nobody is holding store credit.'|t('boomerang') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

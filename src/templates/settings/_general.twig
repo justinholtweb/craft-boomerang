@@ -1,0 +1,308 @@
+{% import '_includes/forms' as forms %}
+
+{% set commerceReady = plugin.commerceIsReady() %}
+
+{% if not commerceReady %}
+    <div class="pane" style="margin-bottom: 1rem;">
+        <p class="error">{{ 'Craft Commerce isn’t installed or is disabled. Boomerang’s returns will sit quietly until it is.'|t('boomerang') }}</p>
+    </div>
+{% endif %}
+
+{% if settings.hasSuppressedProSettings %}
+    <div class="pane" style="margin-bottom: 1rem;">
+        <p class="warning">
+            {{ 'These are switched on but being ignored on Lite: {list}. The settings are kept — nothing is lost by upgrading later.'|t('boomerang', {
+                list: settings.suppressedProSettings|join(', ')
+            }) }}
+        </p>
+    </div>
+{% endif %}
+
+<h2>{{ 'Policy'|t('boomerang') }}</h2>
+<div id="boomerang-policy">
+    {{ forms.textField({
+        label: 'Return window (days)'|t('boomerang'),
+        name: 'settings[returnWindowDays]',
+        value: settings.returnWindowDays,
+        type: 'number',
+        min: 0,
+        size: 5,
+        instructions: 'How long a customer has to start a return. 0 means no window at all.'|t('boomerang'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Counted from'|t('boomerang'),
+        name: 'settings[windowStartsFrom]',
+        options: {
+            ordered: 'The order date'|t('boomerang'),
+            paid: 'The date it was paid'|t('boomerang'),
+            custom: 'A field on the order'|t('boomerang'),
+        },
+        value: settings.windowStartsFrom,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Order field holding the delivery date'|t('boomerang'),
+        name: 'settings[windowStartsFromField]',
+        value: settings.windowStartsFromField,
+        class: 'code',
+        instructions: 'Only used when the window is counted from a field. Falls back to the order date when it is empty — a window that silently never opens is worse than a generous one.'|t('boomerang'),
+    }) }}
+
+    {{ forms.lightswitchField({ label: 'Only completed orders'|t('boomerang'), name: 'settings[requireCompletedOrder]', on: settings.requireCompletedOrder }) }}
+    {{ forms.lightswitchField({ label: 'Only paid orders'|t('boomerang'), name: 'settings[requirePaidOrder]', on: settings.requirePaidOrder }) }}
+    {{ forms.lightswitchField({ label: 'Allow partial quantities'|t('boomerang'), name: 'settings[allowPartialQty]', on: settings.allowPartialQty }) }}
+    {{ forms.lightswitchField({ label: 'Allow more than one return per order'|t('boomerang'), name: 'settings[allowMultipleReturns]', on: settings.allowMultipleReturns }) }}
+
+    {{ forms.editableTableField({
+        label: 'SKUs that can never be returned'|t('boomerang'),
+        name: 'settings[excludedSkus]',
+        cols: { sku: { heading: 'SKU'|t('boomerang'), type: 'singleline', code: true } },
+        rows: settings.excludedSkus|map(sku => { sku: sku }),
+        addRowLabel: 'Add a SKU'|t('boomerang'),
+        instructions: '`*` wildcards work, so `GIFT-*` excludes every gift card without listing them.'|t('boomerang')|md(inlineOnly=true),
+    }) }}
+
+    <hr>
+
+    {{ forms.lightswitchField({
+        label: 'Approve every request automatically'|t('boomerang'),
+        name: 'settings[autoApprove]',
+        on: settings.autoApprove,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Approve automatically under'|t('boomerang'),
+        name: 'settings[autoApproveUnder]',
+        value: settings.autoApproveUnder,
+        type: 'number',
+        step: '0.01',
+        size: 8,
+        instructions: 'Anything worth less than this skips the approval step. 0 is off.'|t('boomerang'),
+    }) }}
+</div>
+
+<hr>
+
+<h2>{{ 'Money'|t('boomerang') }}</h2>
+<div id="boomerang-money">
+    {{ forms.lightswitchField({ label: 'Refund the tax'|t('boomerang'), name: 'settings[refundIncludesTax]', on: settings.refundIncludesTax }) }}
+    {{ forms.lightswitchField({ label: 'Refund the shipping'|t('boomerang'), name: 'settings[refundIncludesShipping]', on: settings.refundIncludesShipping }) }}
+    {{ forms.lightswitchField({
+        label: '…but always when the whole order comes back'|t('boomerang'),
+        name: 'settings[refundShippingOnFullReturn]',
+        on: settings.refundShippingOnFullReturn,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Restocking fee (%)'|t('boomerang'),
+        name: 'settings[restockingFeePercent]',
+        value: settings.restockingFeePercent,
+        type: 'number', step: '0.01', min: 0, max: 100, size: 6,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Restocking fee (flat)'|t('boomerang'),
+        name: 'settings[restockingFeeFlat]',
+        value: settings.restockingFeeFlat,
+        type: 'number', step: '0.01', min: 0, size: 8,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'No fee when it’s our fault'|t('boomerang'),
+        name: 'settings[waiveFeeOnFault]',
+        on: settings.waiveFeeOnFault,
+        instructions: 'On by default. Charging a customer for the store’s own mistake is how a return becomes a chargeback.'|t('boomerang'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Default resolution'|t('boomerang'),
+        name: 'settings[defaultResolution]',
+        options: settings.availableResolutions,
+        value: settings.defaultResolution,
+    }) }}
+
+    {% if plugin.isPro %}
+        {{ forms.lightswitchField({ label: 'Restock returned goods'|t('boomerang'), name: 'settings[restockEnabled]', on: settings.restockEnabled }) }}
+    {% endif %}
+</div>
+
+<hr>
+
+<h2>{{ 'Store credit'|t('boomerang') }}</h2>
+<div id="boomerang-credit">
+    {{ forms.lightswitchField({
+        label: 'Store credit'|t('boomerang'),
+        name: 'settings[creditEnabled]',
+        on: settings.creditEnabled,
+        instructions: 'Needs Pro. Add a “Store Credit (Boomerang)” gateway in Commerce to let customers spend it at checkout.'|t('boomerang'),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Credit bonus (%)'|t('boomerang'),
+        name: 'settings[creditBonusPercent]',
+        value: settings.creditBonusPercent,
+        type: 'number', step: '0.1', min: 0, max: 100, size: 6,
+        instructions: '10 here turns a $50 refund into $55 of credit. This is the lever that makes credit the resolution customers pick.'|t('boomerang'),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Credit expires after (days)'|t('boomerang'),
+        name: 'settings[creditExpiryDays]',
+        value: settings.creditExpiryDays,
+        type: 'number', min: 0, size: 6,
+        instructions: '0 never expires. Run `boomerang/credit/expire` on a schedule so the ledger explains itself.'|t('boomerang')|md(inlineOnly=true),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Warn this many days before'|t('boomerang'),
+        name: 'settings[creditExpiryWarningDays]',
+        value: settings.creditExpiryWarningDays,
+        type: 'number', min: 0, size: 6,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Minimum balance to offer it at checkout'|t('boomerang'),
+        name: 'settings[creditMinimumSpend]',
+        value: settings.creditMinimumSpend,
+        type: 'number', step: '0.01', min: 0, size: 8,
+    }) }}
+</div>
+
+<hr>
+
+<h2>{{ 'Portal'|t('boomerang') }}</h2>
+<div id="boomerang-portal">
+    {{ forms.lightswitchField({ label: 'Customer portal'|t('boomerang'), name: 'settings[portalEnabled]', on: settings.portalEnabled }) }}
+
+    {{ forms.textField({
+        label: 'Mounted at'|t('boomerang'),
+        name: 'settings[portalUriPrefix]',
+        value: settings.portalUriPrefix,
+        class: 'code',
+        instructions: 'Leave empty to route it yourself. Copy `boomerang/_portal/*` into your own templates folder to restyle it — Craft looks there first, so the URLs do not move.'|t('boomerang')|md(inlineOnly=true),
+    }) }}
+
+    {{ forms.lightswitchField({ label: 'Customers must sign in'|t('boomerang'), name: 'settings[portalRequiresLogin]', on: settings.portalRequiresLogin }) }}
+    {{ forms.lightswitchField({ label: 'Customers can cancel'|t('boomerang'), name: 'settings[portalAllowsCancel]', on: settings.portalAllowsCancel }) }}
+
+    {{ forms.textField({
+        label: 'Attempts per hour, per IP'|t('boomerang'),
+        name: 'settings[portalRateLimit]',
+        value: settings.portalRateLimit,
+        type: 'number', min: 0, size: 5,
+        instructions: 'The lookup form is anonymous. Without a limit it is a way to test order numbers against email addresses at whatever rate the server will take. 0 is off.'|t('boomerang'),
+    }) }}
+
+    {{ forms.lightswitchField({ label: 'Customers can attach photos'|t('boomerang'), name: 'settings[portalAllowsPhotos]', on: settings.portalAllowsPhotos }) }}
+
+    {{ forms.selectField({
+        label: 'Photo volume'|t('boomerang'),
+        name: 'settings[photoVolumeUid]',
+        options: [{ label: 'None'|t('app'), value: '' }]|merge(craft.app.volumes.allVolumes|map(v => { label: v.name, value: v.uid })),
+        value: settings.photoVolumeUid,
+    }) }}
+
+    {{ forms.textField({ label: 'Photos per item'|t('boomerang'), name: 'settings[maxPhotosPerItem]', value: settings.maxPhotosPerItem, type: 'number', min: 1, size: 4 }) }}
+    {{ forms.textField({ label: 'Largest photo (KB)'|t('boomerang'), name: 'settings[maxPhotoSize]', value: settings.maxPhotoSize, type: 'number', min: 1, size: 8 }) }}
+
+    {{ forms.textareaField({
+        label: 'Policy text'|t('boomerang'),
+        name: 'settings[policyText]',
+        value: settings.policyText,
+        rows: 4,
+        instructions: 'Shown above the request form.'|t('boomerang'),
+    }) }}
+
+    {{ forms.textField({ label: 'Full policy page'|t('boomerang'), name: 'settings[policyUrl]', value: settings.policyUrl }) }}
+</div>
+
+<hr>
+
+<h2>{{ 'Return labels'|t('boomerang') }}</h2>
+<div id="boomerang-labels">
+    {{ forms.selectField({
+        label: 'Label provider'|t('boomerang'),
+        name: 'settings[labelProvider]',
+        options: plugin.labels.getProviderOptions(),
+        value: settings.labelProvider,
+        instructions: 'Manual makes no outbound request: paste a tracking number and attach the PDF. Needs Pro either way.'|t('boomerang'),
+    }) }}
+
+    {{ forms.autosuggestField({
+        label: 'ShipStation API key'|t('boomerang'),
+        name: 'settings[shipStationApiKey]',
+        value: settings.shipStationApiKey,
+        suggestEnvVars: true,
+    }) }}
+
+    {{ forms.textField({ label: 'ShipStation carrier ID'|t('boomerang'), name: 'settings[shipStationCarrierId]', value: settings.shipStationCarrierId, class: 'code' }) }}
+    {{ forms.textField({ label: 'ShipStation service code'|t('boomerang'), name: 'settings[shipStationServiceCode]', value: settings.shipStationServiceCode, class: 'code' }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Return to the inventory location’s address'|t('boomerang'),
+        name: 'settings[useLocationAddressForReturns]',
+        on: settings.useLocationAddressForReturns,
+        instructions: 'A return label should send the parcel to the warehouse that is going to put the stock back, and Commerce already knows that address.'|t('boomerang'),
+    }) }}
+
+    {% for key, label in {
+        name: 'Name'|t('app'),
+        company: 'Company'|t('boomerang'),
+        addressLine1: 'Address'|t('app'),
+        addressLine2: 'Address 2'|t('boomerang'),
+        locality: 'City'|t('boomerang'),
+        administrativeArea: 'State'|t('boomerang'),
+        postalCode: 'Postcode'|t('boomerang'),
+        countryCode: 'Country code'|t('boomerang'),
+        phone: 'Phone'|t('boomerang')
+    } %}
+        {{ forms.textField({
+            label: label,
+            name: 'settings[returnAddress][' ~ key ~ ']',
+            value: settings.returnAddress[key] ?? '',
+        }) }}
+    {% endfor %}
+
+    {{ forms.selectField({
+        label: 'Store labels in'|t('boomerang'),
+        name: 'settings[labelVolumeUid]',
+        options: [{ label: 'Don’t store them'|t('boomerang'), value: '' }]|merge(craft.app.volumes.allVolumes|map(v => { label: v.name, value: v.uid })),
+        value: settings.labelVolumeUid,
+        instructions: 'Carriers expire their download links. A copy in a volume is what a customer clicks a fortnight later.'|t('boomerang'),
+    }) }}
+</div>
+
+<hr>
+
+<h2>{{ 'Email and retention'|t('boomerang') }}</h2>
+<div id="boomerang-email">
+    {{ forms.lightswitchField({ label: 'Email customers'|t('boomerang'), name: 'settings[notifyCustomer]', on: settings.notifyCustomer }) }}
+    {{ forms.lightswitchField({ label: 'Email staff about new returns'|t('boomerang'), name: 'settings[notifyStaff]', on: settings.notifyStaff }) }}
+
+    {{ forms.editableTableField({
+        label: 'Staff recipients'|t('boomerang'),
+        name: 'settings[staffRecipients]',
+        cols: { email: { heading: 'Email'|t('app'), type: 'singleline' } },
+        rows: settings.staffRecipients|map(email => { email: email }),
+        addRowLabel: 'Add a recipient'|t('boomerang'),
+        instructions: 'Empty falls back to the system email address.'|t('boomerang'),
+    }) }}
+
+    {{ forms.autosuggestField({ label: 'From email'|t('boomerang'), name: 'settings[fromEmail]', value: settings.fromEmail, suggestEnvVars: true }) }}
+    {{ forms.autosuggestField({ label: 'From name'|t('boomerang'), name: 'settings[fromName]', value: settings.fromName, suggestEnvVars: true }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Send through the queue'|t('boomerang'),
+        name: 'settings[queueNotifications]',
+        on: settings.queueNotifications,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Delete closed returns after (days)'|t('boomerang'),
+        name: 'settings[pruneClosedAfterDays]',
+        value: settings.pruneClosedAfterDays,
+        type: 'number', min: 0, size: 6,
+        instructions: '0 keeps them forever, which is the default: a returns history is a compliance record and nobody should lose one by accident. Run `boomerang/returns/prune` to act on it.'|t('boomerang')|md(inlineOnly=true),
+    }) }}
+</div>

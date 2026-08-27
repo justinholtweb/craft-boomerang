@@ -1,0 +1,87 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = user.uiLabel %}
+{% set selectedSubnavItem = 'credit' %}
+{% set crumbs = [{ label: 'Store credit'|t('boomerang'), url: url('boomerang/credit') }] %}
+{% set fullPageForm = true %}
+
+{% block content %}
+    {{ actionInput('boomerang/credit/issue') }}
+    {{ hiddenInput('customerId', user.id) }}
+
+    <div class="pane">
+        <h5 class="heading">{{ 'Spendable balance'|t('boomerang') }}</h5>
+        <p style="font-size: 2rem; margin: 0;">{{ balance|number_format(2) }}</p>
+    </div>
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'Issue credit'|t('boomerang') }}</h2>
+        <div class="flex">
+            {{ forms.text({ name: 'amount', placeholder: 'Amount'|t('boomerang'), type: 'number', step: '0.01', min: '0.01' }) }}
+            {{ forms.text({ name: 'expiryDays', placeholder: 'Expires in (days)'|t('boomerang'), type: 'number', min: 0 }) }}
+            {{ forms.text({ name: 'note', placeholder: 'Why'|t('boomerang') }) }}
+            <button type="submit" class="btn submit">{{ 'Issue'|t('boomerang') }}</button>
+        </div>
+    </div>
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'Lots'|t('boomerang') }}</h2>
+        <p class="light">
+            {{ 'Credit is issued in lots so that expiry is answerable. Spending consumes them in expiry order, so the money about to lapse is always the money spent first.'|t('boomerang') }}
+        </p>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Issued'|t('boomerang') }}</th>
+                    <th>{{ 'Amount'|t('boomerang') }}</th>
+                    <th>{{ 'Remaining'|t('boomerang') }}</th>
+                    <th>{{ 'Expires'|t('boomerang') }}</th>
+                    <th>{{ 'Why'|t('boomerang') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lot in lots %}
+                    <tr{{ lot.isExpired or lot.isSpent ? ' class="disabled"' : '' }}>
+                        <td>{{ lot.dateCreated ? lot.dateCreated|date('Y-m-d') : '' }}</td>
+                        <td>{{ lot.amountIssued|number_format(2) }}</td>
+                        <td>{{ lot.amountRemaining|number_format(2) }}</td>
+                        <td class="light">
+                            {{ lot.expiresAt ? lot.expiresAt|date('Y-m-d') : 'Never'|t('boomerang') }}
+                            {%- if lot.isExpired %} <span class="status-label error">{{ 'Expired'|t('boomerang') }}</span>{% endif -%}
+                        </td>
+                        <td class="light">{{ lot.note }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="light">{{ 'No credit has ever been issued to this customer.'|t('boomerang') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'Ledger'|t('boomerang') }}</h2>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'When'|t('boomerang') }}</th>
+                    <th>{{ 'What'|t('boomerang') }}</th>
+                    <th>{{ 'Amount'|t('boomerang') }}</th>
+                    <th>{{ 'Lot'|t('boomerang') }}</th>
+                    <th>{{ 'Note'|t('boomerang') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td class="light">{{ entry.dateCreated ? entry.dateCreated|datetime('short') : '' }}</td>
+                        <td>{{ entry.getType().label }}</td>
+                        <td{{ entry.isDebit ? ' class="light"' : '' }}>{{ entry.amount|number_format(2) }}</td>
+                        <td class="light">{{ entry.lotId }}</td>
+                        <td class="light">{{ entry.note }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

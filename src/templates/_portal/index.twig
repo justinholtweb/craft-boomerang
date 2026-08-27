@@ -1,0 +1,87 @@
+{% extends 'boomerang/_portal/_base' %}
+
+{% block pageTitle %}{{ 'Returns'|t('boomerang') }}{% endblock %}
+
+{% block body %}
+    <h1>{{ 'Returns'|t('boomerang') }}</h1>
+
+    {% if plugin.settings.policyText %}
+        <p class="muted">{{ plugin.settings.policyText|nl2br }}</p>
+    {% endif %}
+
+    {% if error is defined and error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if user %}
+        {% if returns|length %}
+            <h2>{{ 'Your returns'|t('boomerang') }}</h2>
+            <div class="card">
+                {% for return in returns %}
+                    <div class="row">
+                        <div class="grow">
+                            <strong>{{ return.reference }}</strong><br>
+                            <span class="muted">
+                                {{ return.totalQtyRequested }} {{ 'items'|t('boomerang') }}
+                                {%- if return.orderReference %} · {{ 'order'|t('boomerang') }} {{ return.orderReference }}{% endif -%}
+                            </span>
+                        </div>
+                        <div>
+                            {% if return.state %}<span class="dot"></span>{{ return.state.name }}{% endif %}
+                        </div>
+                        <div>
+                            <a class="btn btn-quiet" href="{{ siteUrl(portalPrefix ~ '/status', { rma: return.portalToken }) }}">{{ 'View'|t('boomerang') }}</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2>{{ 'Start a return'|t('boomerang') }}</h2>
+        {% if orders|length %}
+            <div class="card">
+                {% for order in orders %}
+                    <div class="row">
+                        <div class="grow">
+                            <strong>{{ order.reference ?? order.shortNumber }}</strong><br>
+                            <span class="muted">{{ order.dateOrdered ? order.dateOrdered|date('j M Y') : '' }} · {{ order.totalPrice|commerceCurrency(order.currency) }}</span>
+                        </div>
+                        <div>
+                            {% if craft.boomerang.canReturn(order) %}
+                                <a class="btn" href="{{ siteUrl(portalPrefix ~ '/start', { orderId: order.id }) }}">{{ 'Return items'|t('boomerang') }}</a>
+                            {% else %}
+                                <span class="muted">{{ craft.boomerang.eligibility(order).firstMessage ?? 'Not returnable'|t('boomerang') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">{{ 'You don’t have any orders yet.'|t('boomerang') }}</p>
+        {% endif %}
+    {% else %}
+        <h2>{{ 'Find your order'|t('boomerang') }}</h2>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('boomerang/portal/lookup') }}
+
+            <div class="card fields">
+                <div>
+                    <label for="boomerang-number">{{ 'Order number'|t('boomerang') }}</label>
+                    <input type="text" id="boomerang-number" name="number" value="{{ number ?? '' }}" required
+                           autocomplete="off" placeholder="{{ 'From your receipt'|t('boomerang') }}">
+                </div>
+                <div>
+                    <label for="boomerang-email">{{ 'Email address'|t('boomerang') }}</label>
+                    <input type="email" id="boomerang-email" name="email" value="{{ email ?? '' }}" required
+                           autocomplete="email" placeholder="{{ 'The one you ordered with'|t('boomerang') }}">
+                </div>
+                <div><button type="submit">{{ 'Continue'|t('boomerang') }}</button></div>
+            </div>
+        </form>
+
+        <p class="muted">
+            {{ 'Both are needed — the order number on its own would let anybody read somebody else’s address.'|t('boomerang') }}
+        </p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'boomerang/_portal/_base' %}
+
+{% block pageTitle %}{{ 'Return items'|t('boomerang') }}{% endblock %}
+
+{% block body %}
+    <h1>{{ 'What are you sending back?'|t('boomerang') }}</h1>
+    <p class="muted">
+        {{ 'Order {reference}'|t('boomerang', { reference: order.reference ?? order.shortNumber }) }}
+        {%- if order.dateOrdered %} · {{ order.dateOrdered|date('j M Y') }}{% endif -%}
+    </p>
+
+    {% if settings.policyText %}
+        <p class="notice">{{ settings.policyText|nl2br }}</p>
+    {% endif %}
+
+    {% if eligibility.daysRemaining is not null and eligibility.daysRemaining >= 0 %}
+        <p class="muted">
+            {{ '{n, plural, =0{Today is the last day to start a return.} =1{1 day left to start a return.} other{# days left to start a return.}}'|t('boomerang', { n: eligibility.daysRemaining }) }}
+        </p>
+    {% endif %}
+
+    {% if error is defined and error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% for message in errors ?? [] %}
+        <p class="error">{{ message }}</p>
+    {% endfor %}
+
+    {% if not eligibility.isEligible %}
+        <p class="error">{{ eligibility.firstMessage }}</p>
+        <p><a class="btn btn-quiet" href="{{ portalUrl }}">{{ 'Back'|t('boomerang') }}</a></p>
+    {% else %}
+        <form method="post" accept-charset="UTF-8" enctype="multipart/form-data">
+            {{ csrfInput() }}
+            {{ actionInput('boomerang/portal/submit') }}
+
+            <div class="card">
+                {% for line in eligibility.eligibleLines %}
+                    {# A distinct name: `{% set %}` inside a Twig `for` persists across iterations,
+                       so reusing `posted` would make every line after the first read the first
+                       line's answers. #}
+                    {% set row = (posted ?? {})[line.lineItemId] ?? {} %}
+                    <div class="row">
+                        <div class="grow stack">
+                            <strong>{{ line.description }}</strong>
+                            <span class="muted">
+                                {{ line.sku }}
+                                {%- if line.optionsLabel %} · {{ line.optionsLabel }}{% endif -%}
+                                · {{ line.unitPrice|commerceCurrency(order.currency) }}
+                            </span>
+
+                            <div class="fields" style="margin-top: .5rem;">
+                                <div>
+                                    <label for="qty-{{ line.lineItemId }}">
+                                        {{ 'How many? (up to {n})'|t('boomerang', { n: line.qtyAvailable }) }}
+                                    </label>
+                                    <input type="number" id="qty-{{ line.lineItemId }}"
+                                           name="items[{{ line.lineItemId }}][qty]"
+                                           min="0" max="{{ line.qtyAvailable }}"
+                                           value="{{ row.qty ?? 0 }}">
+                                </div>
+
+                                <div>
+                                    <label for="reason-{{ line.lineItemId }}">{{ 'Why?'|t('boomerang') }}</label>
+                                    <select id="reason-{{ line.lineItemId }}" name="items[{{ line.lineItemId }}][reasonId]">
+                                        <option value="">{{ 'Choose a reason'|t('boomerang') }}</option>
+                                        {% for reason in reasons %}
+                                            <option value="{{ reason.id }}"{{ (row.reasonId ?? null) == reason.id ? ' selected' }}>
+                                                {{ reason.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="comment-{{ line.lineItemId }}">{{ 'Anything we should know?'|t('boomerang') }}</label>
+                                    <textarea id="comment-{{ line.lineItemId }}" name="items[{{ line.lineItemId }}][comment]" rows="2">{{ row.comment ?? '' }}</textarea>
+                                </div>
+
+                                {% if settings.portalAllowsPhotos and settings.photoVolumeUid %}
+                                    <div>
+                                        <label for="photos-{{ line.lineItemId }}">{{ 'Photos'|t('boomerang') }}</label>
+                                        <input type="file" id="photos-{{ line.lineItemId }}" name="photos.{{ line.lineItemId }}[]" multiple accept="image/*">
+                                        <span class="muted">{{ 'Up to {n}. Some reasons need one.'|t('boomerang', { n: settings.maxPhotosPerItem }) }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if eligibility.ineligibleLines|length %}
+                <h2>{{ 'Can’t be returned'|t('boomerang') }}</h2>
+                <div class="card">
+                    {% for line in eligibility.ineligibleLines %}
+                        <div class="row">
+                            <div class="grow">{{ line.description }} <span class="muted">{{ line.sku }}</span></div>
+                            <div class="muted">{{ line.message }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="card fields">
+                <div>
+                    <label for="boomerang-note">{{ 'Anything else?'|t('boomerang') }}</label>
+                    <textarea id="boomerang-note" name="note" rows="3"></textarea>
+                </div>
+                <div>
+                    <button type="submit">{{ 'Request this return'|t('boomerang') }}</button>
+                    <a class="btn btn-quiet" href="{{ portalUrl }}">{{ 'Cancel'|t('boomerang') }}</a>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

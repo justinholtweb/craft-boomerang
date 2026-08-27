@@ -1,0 +1,71 @@
+<div class="meta">
+    <div class="data">
+        <h5 class="heading">{{ 'Returns'|t('boomerang') }}</h5>
+        <div class="value">
+            {% if returns|length %}
+                {% for return in returns %}
+                    <div style="margin-bottom: .35rem;">
+                        <a href="{{ return.cpEditUrl }}">{{ return.reference }}</a>
+                        {% if return.state %}
+                            <span class="status {{ return.state.color }}"></span>{{ return.state.name }}
+                        {% endif %}
+                        <span class="light">— {{ '{qty, plural, =1{1 item} other{# items}}'|t('boomerang', { qty: return.totalQtyRequested }) }}</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <span class="light">{{ 'None yet.'|t('boomerang') }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="data">
+        <h5 class="heading">{{ 'Can be returned'|t('boomerang') }}</h5>
+        <div class="value">
+            {% if eligibility.isEligible %}
+                {{ '{n} of {total} lines'|t('boomerang', {
+                    n: eligibility.eligibleLines|length,
+                    total: eligibility.lines|length
+                }) }}
+                {% if eligibility.daysRemaining is not null %}
+                    <br><span class="light">
+                        {{ '{n} days left in the window'|t('boomerang', { n: eligibility.daysRemaining }) }}
+                    </span>
+                {% endif %}
+            {% else %}
+                <span class="light">{{ eligibility.firstMessage ?? 'No'|t('app') }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if canManage and eligibility.isEligible %}
+        <div class="data">
+            <div class="value">
+                <button type="button" class="btn" id="boomerang-start-return">{{ 'Start a return'|t('boomerang') }}</button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if canManage and eligibility.isEligible %}
+    {% js %}
+        (function() {
+            const button = document.getElementById('boomerang-start-return');
+            if (!button) return;
+
+            // Posted over Ajax rather than from a nested <form>: Commerce's order screen is
+            // already one big form, and a nested form's action input would end up beside its own.
+            button.addEventListener('click', function() {
+                button.classList.add('loading');
+
+                Craft.sendActionRequest('POST', 'boomerang/returns/create', {
+                    data: { orderId: {{ order.id }} }
+                }).then(function(response) {
+                    window.location.href = (response.data && response.data.cpEditUrl) || window.location.href;
+                }).catch(function(error) {
+                    button.classList.remove('loading');
+                    Craft.cp.displayError((error.response && error.response.data && error.response.data.message) || Craft.t('boomerang', 'Could not start a return.'));
+                });
+            });
+        })();
+    {% endjs %}
+{% endif %}

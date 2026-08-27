@@ -1,0 +1,402 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = return.reference %}
+{% set selectedSubnavItem = 'returns' %}
+{% set crumbs = [{ label: 'Returns'|t('boomerang'), url: url('boomerang/returns') }] %}
+{% set fullPageForm = canManage %}
+{% set formActions = [] %}
+
+{% set currency = return.currency ?? craft.app.projectConfig.get('commerce.defaultCurrency') ?? 'USD' %}
+
+{% block content %}
+    {% if canManage %}
+        {{ actionInput('boomerang/returns/save') }}
+        {{ hiddenInput('returnId', return.id) }}
+        {{ redirectInput('boomerang/returns/' ~ return.id) }}
+    {% endif %}
+
+    <div id="fields">
+        {# ---- The items ---- #}
+        <div class="pane">
+            <h2>{{ 'Items'|t('boomerang') }}</h2>
+
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th>{{ 'Item'|t('boomerang') }}</th>
+                        <th>{{ 'Reason'|t('boomerang') }}</th>
+                        <th class="thin">{{ 'Asked'|t('boomerang') }}</th>
+                        <th class="thin">{{ 'Approved'|t('boomerang') }}</th>
+                        <th class="thin">{{ 'Received'|t('boomerang') }}</th>
+                        <th class="thin">{{ 'Restocked'|t('boomerang') }}</th>
+                        <th>{{ 'Condition'|t('boomerang') }}</th>
+                        <th class="thin">{{ 'Value'|t('boomerang') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.description }}</strong><br>
+                                <code class="light">{{ item.sku }}</code>
+                                {% if item.optionsLabel %}<span class="light"> — {{ item.optionsLabel }}</span>{% endif %}
+                                {% if item.customerComment %}
+                                    <p class="light" style="margin: .35rem 0 0;">“{{ item.customerComment }}”</p>
+                                {% endif %}
+                                {% if item.photos|length %}
+                                    <p style="margin: .35rem 0 0;">
+                                        {% for photo in item.photos %}
+                                            <a href="{{ photo.url }}" target="_blank" rel="noopener">{{ 'Photo {n}'|t('boomerang', { n: loop.index }) }}</a>{{ not loop.last ? ', ' }}
+                                        {% endfor %}
+                                    </p>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ item.reasonLabel }}
+                                {% if item.reason and item.reason.isFault %}
+                                    <span class="status-label error">{{ 'Our fault'|t('boomerang') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="thin">{{ item.qtyRequested }}</td>
+                            <td class="thin">
+                                {% if canManage %}
+                                    {{ forms.text({ name: 'items[' ~ item.id ~ '][qtyApproved]', value: item.qtyApproved, size: 3, type: 'number', min: 0, max: item.qtyRequested }) }}
+                                {% else %}{{ item.qtyApproved }}{% endif %}
+                            </td>
+                            <td class="thin">
+                                {% if canManage %}
+                                    {{ forms.text({ name: 'items[' ~ item.id ~ '][qtyReceived]', value: item.qtyReceived, size: 3, type: 'number', min: 0, max: item.resolvableQty }) }}
+                                {% else %}{{ item.qtyReceived }}{% endif %}
+                            </td>
+                            <td class="thin">{{ item.qtyRestocked }}</td>
+                            <td>
+                                {% if canManage %}
+                                    {{ forms.select({ name: 'items[' ~ item.id ~ '][condition]', options: conditions, value: item.condition }) }}
+                                {% else %}{{ item.getCondition().label }}{% endif %}
+                            </td>
+                            <td class="thin">{{ item.refundAmount(plugin.settings.refundIncludesTax)|commerceCurrency(currency) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8" class="light">{{ 'Nothing on this return.'|t('boomerang') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <p class="light" style="margin-top: .75rem;">
+                {{ 'Quantities are what the money is worked out from. Approving fewer than were asked for, or receiving fewer than were approved, both reduce what gets paid.'|t('boomerang') }}
+            </p>
+        </div>
+
+        {# ---- Money ---- #}
+        <div class="pane" style="margin-top: 14px;">
+            <h2>{{ 'Resolution'|t('boomerang') }}</h2>
+
+            {% if canManage %}
+                {{ forms.selectField({
+                    label: 'What the customer gets'|t('boomerang'),
+                    name: 'resolution',
+                    options: resolutions,
+                    value: return.resolution,
+                    disabled: not canResolve,
+                    instructions: canResolve ? null : 'You don’t have permission to change how this return is settled.'|t('boomerang'),
+                }) }}
+            {% else %}
+                <p><strong>{{ return.getResolution().label }}</strong></p>
+            {% endif %}
+
+            <table class="data fullwidth" style="margin-top: .5rem;">
+                <tbody>
+                    <tr>
+                        <th>{{ 'Goods'|t('boomerang') }}</th>
+                        <td>{{ return.itemsValue|commerceCurrency(currency) }}</td>
+                    </tr>
+                    {% if return.feeAmount > 0 %}
+                        <tr>
+                            <th>{{ 'Restocking fee'|t('boomerang') }}</th>
+                            <td>−{{ return.feeAmount|commerceCurrency(currency) }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <th><strong>{{ 'Payable'|t('boomerang') }}</strong></th>
+                        <td><strong>{{ return.resolutionAmount|commerceCurrency(currency) }}</strong></td>
+                    </tr>
+                    {% if return.refundedAmount > 0 %}
+                        <tr><th>{{ 'Refunded'|t('boomerang') }}</th><td>{{ return.refundedAmount|commerceCurrency(currency) }}</td></tr>
+                    {% endif %}
+                    {% if return.creditedAmount > 0 %}
+                        <tr><th>{{ 'Credited'|t('boomerang') }}</th><td>{{ return.creditedAmount|commerceCurrency(currency) }}</td></tr>
+                    {% endif %}
+                    <tr>
+                        <th>{{ 'Still refundable on the order'|t('boomerang') }}</th>
+                        <td class="light">{{ refundable|commerceCurrency(currency) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            {% if plugin.isPro and locations|length > 1 %}
+                {{ forms.selectField({
+                    label: 'Restock into'|t('boomerang'),
+                    name: 'inventoryLocationId',
+                    options: locationOptions,
+                    value: return.inventoryLocationId,
+                }) }}
+            {% endif %}
+
+            {% if canManage %}
+                {{ forms.textareaField({
+                    label: 'Internal note'|t('boomerang'),
+                    name: 'staffNote',
+                    value: return.staffNote,
+                    rows: 3,
+                    instructions: 'Never shown to the customer.'|t('boomerang'),
+                }) }}
+            {% elseif return.staffNote %}
+                <p class="light">{{ return.staffNote|nl2br }}</p>
+            {% endif %}
+        </div>
+
+        {# ---- Labels ---- #}
+        {% if plugin.isPro %}
+            <div class="pane" style="margin-top: 14px;">
+                <h2>{{ 'Return label'|t('boomerang') }}</h2>
+
+                {% if labels|length %}
+                    <table class="data fullwidth">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Carrier'|t('boomerang') }}</th>
+                                <th>{{ 'Tracking'|t('boomerang') }}</th>
+                                <th>{{ 'Cost'|t('boomerang') }}</th>
+                                <th>{{ 'Created'|t('boomerang') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for label in labels %}
+                                <tr{{ label.isVoided ? ' class="disabled"' : '' }}>
+                                    <td>{{ label.carrier ?? label.provider }} {{ label.service }}</td>
+                                    <td>
+                                        {% if label.trackingUrl %}
+                                            <a href="{{ label.trackingUrl }}" target="_blank" rel="noopener">{{ label.trackingNumber }}</a>
+                                        {% else %}{{ label.trackingNumber ?? '—' }}{% endif %}
+                                    </td>
+                                    <td>{{ label.cost ? label.cost|commerceCurrency(label.currency ?? currency) : '—' }}</td>
+                                    <td>{{ label.dateCreated ? label.dateCreated|datetime('short') : '' }}</td>
+                                    <td>
+                                        {% if label.downloadUrl %}
+                                            <a class="btn small" href="{{ label.cpDownloadUrl }}" target="_blank" rel="noopener">{{ 'Download'|t('boomerang') }}</a>
+                                        {% endif %}
+                                        {% if canManage and not label.isVoided %}
+                                            <button type="button" class="btn small boomerang-void-label" data-label-id="{{ label.id }}">{{ 'Void'|t('boomerang') }}</button>
+                                        {% endif %}
+                                        {% if label.isVoided %}<span class="status-label">{{ 'Voided'|t('boomerang') }}</span>{% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="light">{{ 'No label yet.'|t('boomerang') }}</p>
+                {% endif %}
+
+                {% if canManage %}
+                    {# Not a nested form: the fields sit inside the page form and are read by the
+                       JS below, which posts them separately. A real <form> here would be dropped
+                       by the parser and its action input would end up next to the page's. #}
+                    <div class="boomerang-label-form" style="margin-top: 1rem;">
+                        <div class="flex">
+                            {{ forms.text({ id: 'boomerang-tracking', placeholder: 'Tracking number'|t('boomerang') }) }}
+                            {{ forms.text({ id: 'boomerang-carrier', placeholder: 'Carrier'|t('boomerang') }) }}
+                            {{ forms.text({ id: 'boomerang-label-url', placeholder: 'Label URL'|t('boomerang') }) }}
+                            <button type="button" class="btn" id="boomerang-add-label">{{ 'Attach label'|t('boomerang') }}</button>
+                            {% if plugin.settings.effectiveLabelProvider and plugin.settings.effectiveLabelProvider != 'manual' %}
+                                <button type="button" class="btn submit" id="boomerang-buy-label">{{ 'Buy label'|t('boomerang') }}</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# ---- History ---- #}
+        <div class="pane" style="margin-top: 14px;">
+            <h2>{{ 'History'|t('boomerang') }}</h2>
+
+            {% if canManage %}
+                <div class="flex" style="margin-bottom: 1rem;">
+                    {{ forms.text({ id: 'boomerang-note', placeholder: 'Add a note…'|t('boomerang') }) }}
+                    <button type="button" class="btn" id="boomerang-add-note">{{ 'Add'|t('boomerang') }}</button>
+                </div>
+            {% endif %}
+
+            <table class="data fullwidth">
+                <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td class="thin light" style="white-space: nowrap;">
+                                {{ event.dateCreated ? event.dateCreated|datetime('short') : '' }}
+                            </td>
+                            <td class="thin">{{ event.getType().label }}</td>
+                            <td class="thin light">{{ event.actorLabel }}</td>
+                            <td>
+                                {{ event.message }}
+                                {% if event.data|length %}
+                                    <span class="light">
+                                        {%- for key, value in event.data -%}
+                                            {{ key }}: {{ value is iterable ? value|join(', ') : value }}{{ not loop.last ? ' · ' }}
+                                        {%- endfor -%}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if canManage %}
+        {% js %}
+        (function() {
+            const returnId = {{ return.id }};
+
+            function post(action, data, done) {
+                Craft.sendActionRequest('POST', action, { data: Object.assign({ returnId: returnId }, data) })
+                    .then(function(response) {
+                        Craft.cp.displayNotice(response.data.message || Craft.t('boomerang', 'Done.'));
+                        (done || function() { window.location.reload(); })();
+                    })
+                    .catch(function(error) {
+                        Craft.cp.displayError((error.response && error.response.data && error.response.data.message) || Craft.t('boomerang', 'Something went wrong.'));
+                    });
+            }
+
+            // Every secondary action posts over Ajax rather than sitting in its own <form>: this
+            // page is already inside Craft's page form, and a nested form is dropped by the parser
+            // while its inputs survive — which is how a "Void" button ends up running Save.
+            document.querySelectorAll('.boomerang-transition').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    post('boomerang/returns/transition', { stateId: button.dataset.stateId });
+                });
+            });
+
+            const noteButton = document.getElementById('boomerang-add-note');
+            if (noteButton) {
+                noteButton.addEventListener('click', function() {
+                    const input = document.getElementById('boomerang-note');
+                    if (!input.value.trim()) return;
+                    post('boomerang/returns/add-note', { message: input.value });
+                });
+            }
+
+            const voidButtons = document.querySelectorAll('.boomerang-void-label');
+            voidButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    post('boomerang/returns/void-label', { labelId: button.dataset.labelId });
+                });
+            });
+
+            const addLabel = document.getElementById('boomerang-add-label');
+            if (addLabel) {
+                addLabel.addEventListener('click', function() {
+                    post('boomerang/returns/create-label', {
+                        provider: 'manual',
+                        trackingNumber: document.getElementById('boomerang-tracking').value,
+                        carrier: document.getElementById('boomerang-carrier').value,
+                        labelUrl: document.getElementById('boomerang-label-url').value
+                    });
+                });
+            }
+
+            const buyLabel = document.getElementById('boomerang-buy-label');
+            if (buyLabel) {
+                buyLabel.addEventListener('click', function() {
+                    buyLabel.classList.add('loading');
+                    post('boomerang/returns/create-label', {});
+                });
+            }
+        })();
+        {% endjs %}
+    {% endif %}
+{% endblock %}
+
+{% block details %}
+    <div class="meta read-only">
+        <div class="data">
+            <h5 class="heading">{{ 'State'|t('boomerang') }}</h5>
+            <div class="value">
+                {% if state %}<span class="status {{ state.color }}"></span>{{ state.name }}{% else %}—{% endif %}
+            </div>
+        </div>
+        <div class="data">
+            <h5 class="heading">{{ 'Order'|t('boomerang') }}</h5>
+            <div class="value">
+                {% if return.order %}
+                    <a href="{{ return.order.cpEditUrl }}">{{ return.orderReference ?? return.orderNumber[:7] }}</a>
+                {% else %}
+                    {{ return.orderReference ?? '—' }} <span class="light">({{ 'deleted'|t('boomerang') }})</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="data">
+            <h5 class="heading">{{ 'Customer'|t('boomerang') }}</h5>
+            <div class="value">
+                {% if return.customer %}
+                    <a href="{{ return.customer.cpEditUrl }}">{{ return.customer.uiLabel }}</a>
+                {% else %}{{ 'Guest'|t('boomerang') }}{% endif %}<br>
+                <a href="mailto:{{ return.email }}">{{ return.email }}</a>
+            </div>
+        </div>
+        <div class="data">
+            <h5 class="heading">{{ 'Requested'|t('boomerang') }}</h5>
+            <div class="value">{{ return.requestedAt ? return.requestedAt|datetime('short') : '' }}</div>
+        </div>
+        {% if return.receivedAt %}
+            <div class="data">
+                <h5 class="heading">{{ 'Received'|t('boomerang') }}</h5>
+                <div class="value">{{ return.receivedAt|datetime('short') }}</div>
+            </div>
+        {% endif %}
+        {% if return.resolvedAt %}
+            <div class="data">
+                <h5 class="heading">{{ 'Resolved'|t('boomerang') }}</h5>
+                <div class="value">{{ return.resolvedAt|datetime('short') }}</div>
+            </div>
+        {% endif %}
+        {% if return.exchangeOrder %}
+            <div class="data">
+                <h5 class="heading">{{ 'Exchange order'|t('boomerang') }}</h5>
+                <div class="value"><a href="{{ return.exchangeOrder.cpEditUrl }}">{{ return.exchangeOrder.reference ?? return.exchangeOrder.shortNumber }}</a></div>
+            </div>
+        {% endif %}
+        {% if return.portalUrl %}
+            <div class="data">
+                <h5 class="heading">{{ 'Customer’s link'|t('boomerang') }}</h5>
+                <div class="value"><a href="{{ return.portalUrl }}" target="_blank" rel="noopener">{{ 'Status page'|t('boomerang') }}</a></div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if canManage and transitions|length %}
+        <div class="meta">
+            <div class="field">
+                <div class="heading"><label>{{ 'Move this return'|t('boomerang') }}</label></div>
+                <div class="input">
+                    {% for target in transitions %}
+                        <button type="button"
+                                class="btn boomerang-transition{{ target.resolveOnEnter ? ' submit' }}"
+                                data-state-id="{{ target.id }}"
+                                {% if target.resolveOnEnter and not canResolve %}disabled{% endif %}
+                                style="margin: 0 4px 4px 0;">
+                            <span class="status {{ target.color }}"></span>{{ target.name }}
+                        </button>
+                    {% endfor %}
+                </div>
+                <div class="instructions">
+                    <p>{{ 'Moving into a resolving state is what pays the customer. Restocking happens on the way into a receiving state.'|t('boomerang') }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

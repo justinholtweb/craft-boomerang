@@ -1,0 +1,67 @@
+{#
+  The portal's shell.
+
+  A self-contained document rather than something extending the site's layout, because Boomerang
+  has no way to know what a site's layout is called — and a returns page that fatals with
+  "template not found" is worse than a plain one.
+
+  To restyle it, copy this file to `templates/boomerang/_portal/_base.twig` and extend whatever the
+  site uses. Craft looks in the site's templates folder before any plugin root, so the copy wins
+  and the URLs do not move. The same is true of every file beside it.
+#}
+<!doctype html>
+<html lang="{{ craft.app.language|split('-')|first }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {# Never indexed: a status URL is a secret, and a search engine that finds one has published it. #}
+    <meta name="robots" content="noindex, nofollow">
+    <title>{% block pageTitle %}{{ 'Returns'|t('boomerang') }}{% endblock %} — {{ craft.app.getSystemName() }}</title>
+    <style>
+        :root { color-scheme: light dark; }
+        * { box-sizing: border-box; }
+        body {
+            font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 3rem 1.25rem; background: Canvas; color: CanvasText;
+        }
+        .wrap { max-width: 44rem; margin: 0 auto; }
+        h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+        h2 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
+        .muted { opacity: .68; }
+        .card { border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: .75rem; padding: 1.25rem; margin: 1.25rem 0; }
+        .row { display: flex; gap: 1rem; align-items: flex-start; padding: .85rem 0; border-top: 1px solid color-mix(in srgb, CanvasText 10%, transparent); }
+        .row:first-of-type { border-top: 0; }
+        .grow { flex: 1 1 auto; }
+        label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .2rem; }
+        input[type=text], input[type=email], input[type=number], select, textarea {
+            font: inherit; width: 100%; padding: .5rem .65rem; border-radius: .4rem;
+            border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+            background: Canvas; color: CanvasText;
+        }
+        input[type=number] { max-width: 6rem; }
+        button, .btn {
+            font: inherit; font-weight: 600; cursor: pointer; display: inline-block;
+            padding: .6rem 1.1rem; border-radius: .4rem; border: 1px solid currentColor;
+            background: CanvasText; color: Canvas; text-decoration: none;
+        }
+        .btn-quiet { background: transparent; color: CanvasText; }
+        .error { color: #b3261e; }
+        .notice { border-left: 3px solid currentColor; padding-left: .85rem; margin: 1rem 0; }
+        .dot { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; background: currentColor; margin-right: .4rem; }
+        .fields { display: grid; gap: .75rem; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { text-align: left; padding: .4rem 0; vertical-align: top; }
+        .stack { display: grid; gap: .35rem; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    {% block body %}{% endblock %}
+
+    <p class="muted" style="margin-top: 2.5rem; font-size: .85rem;">
+        <a href="{{ portalUrl }}">{{ 'Returns'|t('boomerang') }}</a>
+        {%- if plugin.settings.policyUrl %} · <a href="{{ plugin.settings.policyUrl }}">{{ 'Returns policy'|t('boomerang') }}</a>{% endif -%}
+    </p>
+</div>
+</body>
+</html>

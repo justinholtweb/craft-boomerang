@@ -1,0 +1,20 @@
+{% extends 'boomerang/_emails/_base' %}
+
+{% block subject %}{{ 'Your store credit expires soon'|t('boomerang') }}{% endblock %}
+
+{% block body %}
+    <h1 style="font-size:20px;margin:0 0 12px;">{{ 'Your store credit expires soon'|t('boomerang') }}</h1>
+
+    <p style="margin:0 0 16px;">
+        {{ 'You have {amount} in store credit, and {amount} of it expires on {date}.'|t('boomerang', {
+            amount: amount|number_format(2),
+            date: expiresAt|date('j F Y')
+        }) }}
+    </p>
+
+    <p style="margin:0;">
+        <a href="{{ siteUrl('') }}" style="display:inline-block;padding:10px 18px;background:#1b1b1b;color:#fff;border-radius:6px;text-decoration:none;">
+            {{ 'Spend it'|t('boomerang') }}
+        </a>
+    </p>
+{% endblock %}

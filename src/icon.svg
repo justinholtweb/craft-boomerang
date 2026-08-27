@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Boomerang">
+    <!-- The plate, so the mark reads at 16px in a plugin list as well as at 200px on a store page. -->
+    <rect width="100" height="100" rx="22" fill="#22303C"/>
+    <!-- The flight path: it goes out and it comes back, which is the whole plugin in one arc. -->
+    <path d="M30 74c-14-10-16-30-4-42S60 20 72 32"
+          fill="none" stroke="#E8A33D" stroke-opacity=".38" stroke-width="4"
+          stroke-linecap="round" stroke-dasharray="7 8"/>
+    <!-- The boomerang itself: two arms, one apex, rounded like a thrown thing. -->
+    <path d="M26 76 51 27l25 49"
+          fill="none" stroke="#E8A33D" stroke-width="15"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26 76 51 27l25 49"
+          fill="none" stroke="#F6C46E" stroke-width="5"
+          stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".55"/>
+</svg>

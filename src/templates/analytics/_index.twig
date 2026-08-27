@@ -1,0 +1,169 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Return analytics'|t('boomerang') %}
+{% set selectedSubnavItem = 'analytics' %}
+{% set currency = craft.app.projectConfig.get('commerce.defaultCurrency') ?? 'USD' %}
+
+{% block actionButton %}
+    <a class="btn icon download" href="{{ url('boomerang/analytics/export', { range: range }) }}">{{ 'Export CSV'|t('boomerang') }}</a>
+{% endblock %}
+
+{% block content %}
+    <div class="pane">
+        <div class="flex" style="margin-bottom: 1rem;">
+            {% for key, label in {
+                last7: 'Last 7 days'|t('boomerang'),
+                last30: 'Last 30 days'|t('boomerang'),
+                last90: 'Last 90 days'|t('boomerang'),
+                last365: 'Last year'|t('boomerang')
+            } %}
+                <a class="btn{{ range == key ? ' active' }}" href="{{ url('boomerang/analytics', { range: key }) }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+
+        <div class="flex">
+            {% set tiles = [
+                { label: 'Returns'|t('boomerang'), value: summary.total },
+                { label: 'Value'|t('boomerang'), value: summary.value|commerceCurrency(currency) },
+                { label: 'Return rate'|t('boomerang'), value: summary.returnRate.rate is not null ? summary.returnRate.rate ~ '%' : '—' },
+                { label: 'Our fault'|t('boomerang'), value: summary.faultRate is not null ? summary.faultRate ~ '%' : '—' },
+                { label: 'Median days'|t('boomerang'), value: summary.medianDaysToResolve ?? '—' },
+                { label: 'Back on the shelf'|t('boomerang'), value: summary.restockRecovery.rate is not null ? summary.restockRecovery.rate ~ '%' : '—' },
+            ] %}
+            {% for tile in tiles %}
+                <div style="min-width: 9rem;">
+                    <h5 class="heading">{{ tile.label }}</h5>
+                    <p style="font-size: 1.6rem; margin: 0; line-height: 1.2;">{{ tile.value }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if daily|length > 1 %}
+        {# Computed off a column rather than accumulated in a loop: a `{% set %}` inside a Twig
+           `for` is scoped to the loop body and is gone by the time the chart is drawn. And it is
+           called `peak`, not `max`, because a variable named `max` shadows Twig's own max(). #}
+        {% set counts = daily|column('count') %}
+        {% set peak = counts|length ? max(counts) : 1 %}
+        {% set width = 900 %}
+        {% set height = 160 %}
+        {% set step = daily|length > 1 ? (width - 20) / (daily|length - 1) : 0 %}
+
+        <div class="pane" style="margin-top: 14px;">
+            <h2>{{ 'Returns per day'|t('boomerang') }}</h2>
+            {# Hand-drawn: a chart library for one sparkline is 200KB nobody asked for. Scaled
+               uniformly and sized in CSS, because preserveAspectRatio="none" stretches the text
+               along with the plot. #}
+            <svg viewBox="0 0 {{ width }} {{ height }}" style="width: 100%; height: auto; overflow: visible;" role="img"
+                 aria-label="{{ 'Returns per day'|t('boomerang') }}">
+                <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+                          points="{% for point in daily %}{{ (10 + loop.index0 * step)|round(2) }},{{ (height - 20 - (point.count / peak) * (height - 40))|round(2) }} {% endfor %}"/>
+                {% for point in daily %}
+                    <circle cx="{{ (10 + loop.index0 * step)|round(2) }}"
+                            cy="{{ (height - 20 - (point.count / peak) * (height - 40))|round(2) }}"
+                            r="2.5" fill="currentColor">
+                        <title>{{ point.date }}: {{ point.count }}</title>
+                    </circle>
+                {% endfor %}
+                <line x1="10" y1="{{ height - 20 }}" x2="{{ width - 10 }}" y2="{{ height - 20 }}" stroke="currentColor" stroke-opacity=".2"/>
+            </svg>
+            <p class="light" style="margin: .25rem 0 0;">
+                {% set firstDay = daily|first %}{% set lastDay = daily|last %}
+                {{ firstDay.date }} → {{ lastDay.date }} · {{ 'peak {n} in a day'|t('boomerang', { n: peak }) }}
+            </p>
+        </div>
+    {% endif %}
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'Why things came back'|t('boomerang') }}</h2>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Reason'|t('boomerang') }}</th>
+                    <th>{{ 'Our fault'|t('boomerang') }}</th>
+                    <th>{{ 'Returns'|t('boomerang') }}</th>
+                    <th>{{ 'Units'|t('boomerang') }}</th>
+                    <th>{{ 'Value'|t('boomerang') }}</th>
+                    <th style="width: 30%;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set topReason = byReason|first %}
+                {% set topUnits = topReason ? topReason.units : 1 %}
+                {% for row in byReason %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{% if row.isFault %}<span class="status-label error">{{ 'Yes'|t('app') }}</span>{% endif %}</td>
+                        <td>{{ row.returns }}</td>
+                        <td>{{ row.units }}</td>
+                        <td>{{ row.value|commerceCurrency(currency) }}</td>
+                        <td>
+                            <div style="background: currentColor; opacity: .25; height: 8px; border-radius: 4px; width: {{ topUnits ? (row.units / topUnits * 100)|round : 0 }}%;"></div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="light">{{ 'Nothing in this period.'|t('boomerang') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'What came back'|t('boomerang') }}</h2>
+        <p class="light">
+            {{ 'The rate is against how many were sold in the same period — 20 back out of 2,000 is fine, and 8 back out of 20 is not.'|t('boomerang') }}
+        </p>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'SKU'|t('boomerang') }}</th>
+                    <th>{{ 'Item'|t('boomerang') }}</th>
+                    <th>{{ 'Units back'|t('boomerang') }}</th>
+                    <th>{{ 'Sold'|t('boomerang') }}</th>
+                    <th>{{ 'Rate'|t('boomerang') }}</th>
+                    <th>{{ 'Value'|t('boomerang') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in byProduct %}
+                    <tr>
+                        <td><code>{{ row.sku }}</code></td>
+                        <td>{{ row.description }}</td>
+                        <td>{{ row.units }}</td>
+                        <td class="light">{{ row.sold }}</td>
+                        <td>{{ row.rate is not null ? row.rate ~ '%' : '—' }}</td>
+                        <td>{{ row.value|commerceCurrency(currency) }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="light">{{ 'Nothing in this period.'|t('boomerang') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pane" style="margin-top: 14px;">
+        <h2>{{ 'How they were settled'|t('boomerang') }}</h2>
+        <table class="data fullwidth">
+            <tbody>
+                {% for key, row in byResolution %}
+                    <tr>
+                        <th>{{ key }}</th>
+                        <td>{{ row.count }}</td>
+                        <td>{{ row.value|commerceCurrency(currency) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 style="margin-top: 1.5rem;">{{ 'Store credit'|t('boomerang') }}</h2>
+        <table class="data fullwidth">
+            <tbody>
+                <tr><th>{{ 'Issued'|t('boomerang') }}</th><td>{{ credit.issued|commerceCurrency(currency) }}</td></tr>
+                <tr><th>{{ 'Spent'|t('boomerang') }}</th><td>{{ credit.spent|commerceCurrency(currency) }}</td></tr>
+                <tr><th>{{ 'Expired'|t('boomerang') }}</th><td>{{ credit.expired|commerceCurrency(currency) }}</td></tr>
+                <tr><th>{{ 'Outstanding'|t('boomerang') }}</th><td>{{ credit.outstanding|commerceCurrency(currency) }}</td></tr>
+                <tr><th>{{ 'Redeemed'|t('boomerang') }}</th><td>{{ credit.redemptionRate is not null ? credit.redemptionRate ~ '%' : '—' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

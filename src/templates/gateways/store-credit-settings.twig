@@ -1,0 +1,13 @@
+{% import '_includes/forms' as forms %}
+
+<p class="light">
+    {{ 'This gateway spends the balance Boomerang’s wallet holds for the signed-in customer. It offers itself only when there is a balance to spend, so it is safe to leave enabled for everyone.'|t('boomerang') }}
+</p>
+
+<p class="light">
+    {{ 'Set the payment type to **Purchase** unless your other gateways authorize and capture — the wallet does both, and it should behave like the rest of your checkout rather than differently.'|t('boomerang')|md }}
+</p>
+
+{% if not plugin.isPro %}
+    <p class="warning">{{ 'Store credit needs Boomerang Pro. The gateway stays configured and existing payments stay refundable, but nobody can pay with it.'|t('boomerang') }}</p>
+{% endif %}

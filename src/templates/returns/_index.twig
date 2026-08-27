@@ -1,0 +1,33 @@
+{% extends '_layouts/elementindex' %}
+
+{% set title = 'Returns'|t('boomerang') %}
+{% set elementType = 'justinholtweb\\boomerang\\elements\\ReturnRequest' %}
+{% set selectedSubnavItem = 'returns' %}
+
+{% block actionButton %}
+    {% if plugin.isPro and currentUser.can('boomerang-viewAnalytics') %}
+        <a class="btn icon chart" href="{{ url('boomerang/analytics') }}">{{ 'Analytics'|t('boomerang') }}</a>
+    {% endif %}
+{% endblock %}
+
+{% block sidebar %}
+    {{ parent() }}
+
+    {% if plugin.settings.hasSuppressedProSettings %}
+        <div class="pane" style="margin-top: 14px;">
+            <h5 class="heading">{{ 'Switched on, but not running'|t('boomerang') }}</h5>
+            <p class="light" style="margin: 0;">
+                {{ 'These need Boomerang Pro and are being ignored: {list}.'|t('boomerang', {
+                    list: plugin.settings.suppressedProSettings|join(', ')
+                }) }}
+            </p>
+        </div>
+    {% endif %}
+
+    <div class="pane" style="margin-top: 14px;">
+        <h5 class="heading">{{ 'Starting a return'|t('boomerang') }}</h5>
+        <p class="light" style="margin: 0;">
+            {{ 'Returns are started from an order, or by the customer on the portal — so that what can be sent back is decided in one place.'|t('boomerang') }}
+        </p>
+    </div>
+{% endblock %}

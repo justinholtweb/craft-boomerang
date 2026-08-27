@@ -1,0 +1,17 @@
+{#
+  The shell every Boomerang email uses.
+
+  Copy to `templates/boomerang/_emails/_base.twig` to restyle all of them at once — Craft checks
+  the site's templates folder before any plugin root. Inline styles only: an email client is not a
+  browser, and half of them throw away a <style> block.
+#}
+<!doctype html>
+<html lang="{{ craft.app.language|split('-')|first }}">
+<head><meta charset="utf-8"><title>{% block subject %}{% endblock %}</title></head>
+<body style="margin:0;padding:24px;background:#f6f6f6;font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b;">
+<div style="max-width:36rem;margin:0 auto;background:#fff;border-radius:10px;padding:28px;">
+    {% block body %}{% endblock %}
+    <p style="margin:28px 0 0;font-size:13px;color:#767676;">{{ craft.app.getSystemName() }}</p>
+</div>
+</body>
+</html>

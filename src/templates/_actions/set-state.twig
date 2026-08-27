@@ -1,0 +1,12 @@
+<button type="button" class="btn menubtn" aria-label="{{ 'Set state'|t('boomerang') }}">{{ 'Set state'|t('boomerang') }}</button>
+<div class="menu">
+    <ul>
+        {% for state in states %}
+            <li>
+                <a class="formsubmit" data-param="stateId" data-value="{{ state.id }}">
+                    <span class="status {{ state.color }}"></span> {{ state.name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

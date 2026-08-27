@@ -1,0 +1,44 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'Return reasons'|t('boomerang') %}
+{% set selectedSubnavItem = 'reasons' %}
+
+{% block actionButton %}
+    <a href="{{ url('boomerang/reasons/new') }}" class="btn submit add icon">{{ 'New reason'|t('boomerang') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="light">
+        {{ '“Our fault” is the field that makes the reports worth reading. A 12% return rate that is all “bought two sizes” is a sizing-chart problem; the same 12% that is all “arrived damaged” is a packing problem.'|t('boomerang') }}
+    </p>
+
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>{{ 'Name'|t('app') }}</th>
+                <th>{{ 'Handle'|t('app') }}</th>
+                <th>{{ 'Our fault'|t('boomerang') }}</th>
+                <th>{{ 'Needs'|t('boomerang') }}</th>
+                <th>{{ 'Arrives as'|t('boomerang') }}</th>
+                <th>{{ 'Shown to customers'|t('boomerang') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reason in reasons %}
+                <tr{{ not reason.enabled ? ' class="disabled"' : '' }}>
+                    <td><a href="{{ reason.cpEditUrl }}">{{ reason.name }}</a></td>
+                    <td><code>{{ reason.handle }}</code></td>
+                    <td>{{ reason.isFault ? 'Yes'|t('app') : '' }}</td>
+                    <td class="light">
+                        {%- set needs = [] -%}
+                        {%- if reason.requiresComment %}{% set needs = needs|merge(['a comment'|t('boomerang')]) %}{% endif -%}
+                        {%- if reason.requiresPhoto %}{% set needs = needs|merge(['a photo'|t('boomerang')]) %}{% endif -%}
+                        {{ needs|join(', ') }}
+                    </td>
+                    <td class="light">{{ reason.getDefaultCondition().label }}</td>
+                    <td>{{ reason.customerSelectable ? 'Yes'|t('app') : '' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

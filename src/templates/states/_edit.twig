@@ -1,0 +1,119 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = isNew ? 'New state'|t('boomerang') : state.name %}
+{% set selectedSubnavItem = 'states' %}
+{% set crumbs = [{ label: 'Return states'|t('boomerang'), url: url('boomerang/states') }] %}
+{% set fullPageForm = true %}
+
+{% block content %}
+    {{ actionInput('boomerang/states/save') }}
+    {{ redirectInput('boomerang/states') }}
+    {% if not isNew %}{{ hiddenInput('stateId', state.id) }}{% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('app'),
+        name: 'name',
+        value: state.name,
+        errors: state.getErrors('name'),
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('app'),
+        name: 'handle',
+        value: state.handle,
+        errors: state.getErrors('handle'),
+        required: true,
+        class: 'code',
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Kind'|t('boomerang'),
+        name: 'kind',
+        options: kinds,
+        value: state.kind,
+        instructions: 'What this state means to the plugin. Nothing reads the name — this is what decides whether a return here counts as approved, received, or finished with.'|t('boomerang'),
+    }) }}
+
+    {{ forms.colorField({
+        label: 'Colour'|t('boomerang'),
+        name: 'color',
+        value: state.color ? '#' ~ state.color|trim('#') : null,
+        instructions: 'Leave empty to use the kind’s colour.'|t('boomerang'),
+    }) }}
+
+    {{ forms.textareaField({
+        label: 'Description'|t('app'),
+        name: 'description',
+        value: state.description,
+        rows: 2,
+    }) }}
+
+    <hr>
+
+    {{ forms.checkboxSelectField({
+        label: 'Can move to'|t('boomerang'),
+        name: 'transitions',
+        options: allStates|map(s => { label: s.name, value: s.uid }),
+        values: state.transitions,
+        showAllOption: false,
+        instructions: 'Tick nothing to allow any move from here — which is the escape hatch a returns desk needs at five o’clock on a Friday.'|t('boomerang'),
+    }) }}
+
+    <hr>
+
+    {{ forms.lightswitchField({
+        label: 'New returns start here'|t('boomerang'),
+        name: 'isDefault',
+        on: state.isDefault,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Email the customer on arrival'|t('boomerang'),
+        name: 'notifyCustomer',
+        on: state.notifyCustomer,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Restock on arrival'|t('boomerang'),
+        name: 'restockOnEnter',
+        on: state.restockOnEnter,
+        instructions: 'Puts what was received back into inventory, in the condition each item was marked with. Needs Pro; ignored otherwise.'|t('boomerang'),
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Pay the customer on arrival'|t('boomerang'),
+        name: 'resolveOnEnter',
+        on: state.resolveOnEnter,
+        instructions: 'Carries out the return’s resolution — the refund, the credit, the exchange order. If it fails, the return does not move.'|t('boomerang'),
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Offer a return label here'|t('boomerang'),
+        name: 'offerLabel',
+        on: state.offerLabel,
+    }) }}
+
+    <hr>
+
+    {{ forms.textField({
+        label: 'Email subject'|t('boomerang'),
+        name: 'emailSubject',
+        value: state.emailSubject,
+        instructions: 'Leave empty for the default. Twig against the return: `{{ return.reference }}`.'|t('boomerang')|md(inlineOnly=true),
+    }) }}
+
+    {{ forms.textareaField({
+        label: 'Email body'|t('boomerang'),
+        name: 'emailBody',
+        value: state.emailBody,
+        rows: 8,
+        instructions: 'Leave empty to use Boomerang’s own template, which a site template of the same path overrides.'|t('boomerang'),
+    }) }}
+
+    {% if not isNew and returnCount %}
+        <p class="light">{{ '{count} returns are in this state.'|t('boomerang', { count: returnCount }) }}</p>
+    {% endif %}
+{% endblock %}

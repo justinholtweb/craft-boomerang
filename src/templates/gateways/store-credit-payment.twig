@@ -1,0 +1,20 @@
+{% set currency = order is defined and order ? order.currency : null %}
+
+<div class="boomerang-credit-payment">
+    {% if balance > 0 %}
+        <p>
+            {{ 'You have {balance} in store credit.'|t('boomerang', {
+                balance: currency ? balance|commerceCurrency(currency) : balance|number_format(2)
+            }) }}
+        </p>
+
+        {% if order is defined and order and order.outstandingBalance > balance %}
+            <p>
+                {{ 'That covers part of this order — the rest can be paid another way.'|t('boomerang') }}
+            </p>
+            <input type="hidden" name="paymentAmount" value="{{ balance }}">
+        {% endif %}
+    {% else %}
+        <p>{{ 'You don’t have any store credit to spend.'|t('boomerang') }}</p>
+    {% endif %}
+</div>

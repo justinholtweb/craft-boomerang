@@ -1,0 +1,103 @@
+{% extends 'boomerang/_portal/_base' %}
+
+{% block pageTitle %}{{ 'Return {reference}'|t('boomerang', { reference: return.reference }) }}{% endblock %}
+
+{% block body %}
+    {#
+      What is *not* here matters as much as what is: no staff notes, no failures, no internal
+      amounts beyond what the customer is owed. `EventType::isCustomerVisible()` decides, once, in
+      PHP — a template that filtered this itself would eventually stop matching the emails.
+    #}
+    <h1>{{ return.reference }}</h1>
+    <p class="muted">
+        {% if return.state %}<span class="dot"></span>{{ return.state.name }} · {% endif %}
+        {{ 'Requested {date}'|t('boomerang', { date: return.requestedAt ? return.requestedAt|date('j M Y') : '' }) }}
+    </p>
+
+    {% if return.state and return.state.description %}
+        <p class="notice">{{ return.state.description }}</p>
+    {% endif %}
+
+    <div class="card">
+        <table>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.description }}</strong><br>
+                            <span class="muted">
+                                {{ item.sku }}
+                                {%- if item.optionsLabel %} · {{ item.optionsLabel }}{% endif -%}
+                                · {{ item.reasonLabel }}
+                            </span>
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            × {{ item.qtyRequested }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if return.resolutionAmount > 0 %}
+        <div class="card">
+            <table>
+                <tbody>
+                    <tr>
+                        <th>{{ return.getResolution().label }}</th>
+                        <td style="text-align: right;">{{ return.resolutionAmount|commerceCurrency(return.currency ?? 'USD') }}</td>
+                    </tr>
+                    {% if return.feeAmount > 0 %}
+                        <tr class="muted">
+                            <th>{{ 'Restocking fee'|t('boomerang') }}</th>
+                            <td style="text-align: right;">−{{ return.feeAmount|commerceCurrency(return.currency ?? 'USD') }}</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if label %}
+        <h2>{{ 'Your return label'|t('boomerang') }}</h2>
+        <div class="card">
+            <p>
+                {{ label.carrier }} {{ label.service }}
+                {%- if label.trackingNumber %} · {{ label.trackingNumber }}{% endif -%}
+            </p>
+            {% if label.downloadUrl %}
+                <p><a class="btn" href="{{ actionUrl('boomerang/labels/download', { labelId: label.id, rma: return.portalToken }) }}">{{ 'Download the label'|t('boomerang') }}</a></p>
+            {% endif %}
+        </div>
+    {% elseif return.state and return.state.offerLabel %}
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('boomerang/portal/request-label') }}
+            {{ hiddenInput('rma', return.portalToken) }}
+            <p><button type="submit">{{ 'Get a return label'|t('boomerang') }}</button></p>
+        </form>
+    {% endif %}
+
+    <h2>{{ 'Progress'|t('boomerang') }}</h2>
+    <div class="card">
+        {% for event in events %}
+            <div class="row">
+                <div class="muted" style="min-width: 8rem;">{{ event.dateCreated ? event.dateCreated|date('j M Y') : '' }}</div>
+                <div class="grow">
+                    {{ event.getType().label }}
+                    {%- if event.message %} — {{ event.message }}{% endif -%}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if return.isCustomerCancellable %}
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('boomerang/portal/cancel') }}
+            {{ hiddenInput('rma', return.portalToken) }}
+            <p><button type="submit" class="btn-quiet">{{ 'Cancel this return'|t('boomerang') }}</button></p>
+        </form>
+    {% endif %}
+{% endblock %}
