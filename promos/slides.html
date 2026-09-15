@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<!-- handmade: hand-tuned deck -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boomerang — Plugin Store promos</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Keyed off the app icon: #22303C is the tile, #E8A33D the mark, #F6C46E its highlight. */
+  :root {
+    --ink: #0d141c;
+    --ink-light: #131d28;
+    --ink-lighter: #22303C;
+    --accent: #E8A33D;
+    --accent-light: #F6C46E;
+    --brass: #FBE3B4;
+    --green: #4ade80;
+    --off-white: #eef3f8;
+  }
+
+  html { background: #000; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--off-white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- slide shell ---------------------------------------------------- */
+  .slide {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 85% 15%, rgba(232, 163, 61, 0.26) 0%, transparent 40%),
+      radial-gradient(ellipse at 65% 5%,  rgba(246, 196, 110, 0.10) 0%, transparent 35%),
+      radial-gradient(ellipse at 15% 85%, rgba(238, 243, 248, 0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at 35% 95%, rgba(232, 163, 61, 0.09) 0%, transparent 35%),
+      linear-gradient(135deg, #0d141c 0%, #131d28 30%, #22303C 60%, #0d141c 100%);
+  }
+
+  /* Oversized watermark, echoing the app icon.
+
+     Boomerang's mark is two strokes rather than a filled figure, which is misleading: at 960px
+     the 15px chevron scales to a ~144px bar, so it lays down *more* contiguous ink than Bee's
+     airy silhouette does, not less. 0.032 — reasoned up from the family's filled-mark 0.020 on
+     the assumption that a stroke needs more — put a legible chevron behind every headline.
+     0.008 is the point where the shape is present without the eye landing on it. The crop stays
+     gentle at left -12%: a stroked chevron cropped hard reads as a stray diagonal rule rather
+     than as the icon. */
+  .slide::after {
+    content: '';
+    position: absolute;
+    top: -1%;
+    left: -12%;
+    width: 960px;
+    height: 960px;
+    background: url('assets/watermark.svg') no-repeat center / contain;
+    opacity: 0.008;
+    pointer-events: none;
+  }
+
+  /* Hairline along the top edge */
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--brass), var(--accent));
+    z-index: 5;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 118px 130px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ---- type ------------------------------------------------------------ */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(238, 243, 248, 0.62);
+    margin-bottom: 34px;
+  }
+  .eyebrow .rule { width: 58px; height: 3px; border-radius: 2px; background: var(--accent-light); }
+
+  h1, h2 {
+    font-family: 'Jersey 20', sans-serif;
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: 0.005em;
+  }
+
+  .gradient-text {
+    background: linear-gradient(100deg, #E8A33D 0%, #F6C46E 38%, #FBE3B4 68%, #E8A33D 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lede { font-size: 34px; line-height: 1.5; color: rgba(238, 243, 248, 0.72); }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
+
+  /* ---- cover slide ----------------------------------------------------- */
+  .cover .inner { gap: 90px; }
+  .cover .copy { flex: 1 1 auto; }
+  .cover h1 { font-size: 210px; margin-bottom: 26px; }
+  .cover .tagline {
+    font-family: 'Jersey 20', sans-serif;
+    font-size: 60px;
+    line-height: 1.02;
+    color: var(--off-white);
+    margin-bottom: 40px;
+    max-width: 15ch;
+  }
+  .cover .lede { max-width: 27ch; font-size: 30px; }
+
+  .cover .mark {
+    flex: 0 0 auto;
+    width: 460px;
+    height: 460px;
+    filter: drop-shadow(14px 14px 0 rgba(0, 0, 0, 0.35));
+  }
+  .cover .mark img { width: 100%; height: 100%; display: block; }
+
+  .badges { display: flex; gap: 16px; margin-top: 52px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 26px;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(238, 243, 248, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+  }
+  .badge .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-light); }
+  .badge.price .dot { background: var(--brass); }
+
+  /* ---- the before/after statement -------------------------------------- */
+  .statement .inner { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  .statement .eyebrow { justify-content: center; }
+  .swap { display: flex; flex-direction: column; align-items: center; gap: 22px; margin-top: 8px; }
+  .swap .caption {
+    font-size: 26px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(238, 243, 248, 0.42);
+  }
+  .swap .before {
+    font-size: 40px;
+    white-space: nowrap;
+    color: rgba(238, 243, 248, 0.34);
+    letter-spacing: 0.01em;
+  }
+  .swap .arrow {
+    width: 4px; height: 62px; border-radius: 2px;
+    background: linear-gradient(180deg, rgba(246,196,110,0.15), var(--accent-light));
+    position: relative;
+  }
+  .swap .arrow::after {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: -4px;
+    width: 18px; height: 18px;
+    transform: translateX(-50%) rotate(45deg);
+    border-right: 4px solid var(--accent-light);
+    border-bottom: 4px solid var(--accent-light);
+    border-radius: 2px;
+  }
+  .swap .after { font-size: 48px; line-height: 1; letter-spacing: 0.01em; white-space: nowrap; }
+  .statement .lede { margin-top: 40px; max-width: 42ch; font-size: 32px; }
+
+  /* ---- feature slides -------------------------------------------------- */
+  .feature .inner { align-items: center; }
+  .feature .copy { width: 780px; flex: 0 0 780px; }
+  .feature h2 { font-size: 108px; margin-bottom: 30px; }
+  .feature .lede { max-width: 21ch; }
+
+  .points { list-style: none; margin-top: 44px; display: flex; flex-direction: column; gap: 18px; }
+  .points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 25px;
+    line-height: 1.4;
+    color: rgba(238, 243, 248, 0.6);
+  }
+  .points li .tick {
+    flex: 0 0 auto; margin-top: 9px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-light);
+  }
+  /* The li is a flex container, so an inline <span class="mono"> left loose in the text becomes
+     a sibling flex item and picks up the 16px gap on both sides. Every point keeps its text in
+     one .t. Keep each point to one line — about 55 characters at 25px in a 780px column. A
+     second line runs at the panel, which starts at left: 900px, and the two simply overlap. */
+  .points li .t { flex: 1 1 auto; }
+
+  /* Right-hand panel shared by the portal, states, wallet and resolution slides */
+  .panel {
+    position: absolute;
+    top: 50%;
+    left: 900px;
+    right: 130px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* ---- what a state can do --------------------------------------------- */
+  .parts { display: flex; flex-direction: column; gap: 20px; }
+  .part {
+    padding: 28px 34px;
+    border-radius: 16px;
+    background: rgba(34, 48, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .part .label {
+    font-size: 19px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent-light); margin-bottom: 14px;
+  }
+  .part .said { font-size: 30px; color: var(--off-white); margin-bottom: 10px; }
+  .part .said b { color: var(--brass); font-weight: 400; }
+  .part .also { font-size: 21px; line-height: 1.45; color: rgba(238, 243, 248, 0.42); }
+
+  /* ---- the portal, step by step ---------------------------------------- */
+  .steps { display: flex; flex-direction: column; gap: 16px; }
+  .step {
+    display: flex; align-items: baseline; gap: 26px;
+    padding: 26px 34px; border-radius: 14px;
+    background: rgba(34, 48, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .step .n { flex: 0 0 46px; font-size: 30px; color: var(--brass); }
+  .step .t { flex: 1 1 auto; font-size: 25px; line-height: 1.4; color: rgba(238, 243, 248, 0.72); }
+  .step .t b { color: var(--off-white); font-weight: 600; }
+
+  /* ---- the three resolutions -------------------------------------------- */
+  .places { display: flex; flex-wrap: wrap; gap: 22px; }
+  .place {
+    flex: 1 1 calc(50% - 11px);
+    padding: 34px 32px; border-radius: 18px;
+    background: rgba(34, 48, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  /* No text-transform here, unlike the rest of the family's chips: these carry service calls and
+     console commands, and upper-casing them destroys the camelCase that is the point. */
+  .place .chip {
+    display: inline-block; margin-bottom: 18px;
+    padding: 7px 16px; border-radius: 999px;
+    font-size: 19px; letter-spacing: 0.01em;
+    color: var(--accent-light); background: rgba(232, 163, 61, 0.28);
+  }
+  .place .where { font-size: 27px; font-weight: 600; color: var(--off-white); margin-bottom: 14px; }
+  .place .what { font-size: 21px; line-height: 1.45; color: rgba(238, 243, 248, 0.5); }
+
+  /* ---- credit lots ------------------------------------------------------ */
+  .finds { display: flex; flex-direction: column; gap: 16px; }
+  .find {
+    display: flex; align-items: center; gap: 26px;
+    padding: 26px 34px; border-radius: 16px;
+    background: rgba(34, 48, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .find .vol { flex: 0 0 210px; font-size: 24px; color: var(--brass); letter-spacing: 0.02em; }
+  .find .what { flex: 1 1 auto; font-size: 23px; color: rgba(238, 243, 248, 0.66); }
+  .find .sev { flex: 0 0 auto; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+  /* Emphasis is carried by colour, never by a border style — a dashed 1px border does not
+     survive the downsample from 3840 to 1920. */
+  .find.bad { border-color: rgba(246, 196, 110, 0.55); background: rgba(232, 163, 61, 0.20); }
+  .find.bad .what { color: var(--off-white); }
+  .find.warn .sev { color: var(--brass); }
+  .find.spent .sev { color: rgba(238, 243, 248, 0.35); }
+
+  /* ---- terminal --------------------------------------------------------- */
+  .term {
+    position: absolute; top: 50%; left: 900px; right: -110px;
+    transform: translateY(-50%);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .term .chrome {
+    height: 44px; background: #22303C;
+    background-image:
+      radial-gradient(circle at 26px 22px, #ff5f57 6.5px, transparent 7px),
+      radial-gradient(circle at 52px 22px, #ffbd2e 6.5px, transparent 7px),
+      radial-gradient(circle at 78px 22px, #28ca42 6.5px, transparent 7px);
+  }
+  .term .body {
+    background: #0b1119; padding: 40px 44px;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 23px; line-height: 1.85;
+  }
+  .term .prompt { color: var(--accent-light); }
+  .term .cmd { color: var(--off-white); }
+  .term .out { color: rgba(238, 243, 248, 0.45); }
+  .term .ok { color: var(--green); }
+  .term .warn { color: var(--brass); }
+  .term .err { color: #ff8f7e; }
+  .term .blank { display: block; height: 18px; }
+
+  /* ---- footer lockup --------------------------------------------------- */
+  .footer {
+    position: absolute; left: 130px; bottom: 62px; z-index: 3;
+    display: flex; align-items: center; gap: 18px;
+    font-size: 22px; letter-spacing: 0.06em;
+    color: rgba(238, 243, 248, 0.4);
+  }
+  .footer img { width: 40px; height: 40px; border-radius: 9px; }
+  .footer b { color: rgba(238, 243, 248, 0.72); font-weight: 600; }
+
+  /* Only render the requested slide when screenshotting */
+  body.single .slide { display: none; }
+  body.single .slide.active { display: block; }
+
+  /* ---- control-panel screenshot cards ----------------------------------
+     Self-contained: these cards must drop into any deck in the family, and the decks do not
+     share a class system. Only --accent-light and --off-white are relied on, both of which
+     every deck defines, and both have fallbacks. */
+  .slide.cpcard { display: block; }
+  .cpcard .cpc-inner {
+    position: relative; z-index: 2; height: 100%;
+    padding: 112px 120px; display: flex; align-items: center; gap: 70px;
+  }
+  .cpcard .cpc-copy { width: 660px; flex: 0 0 660px; }
+
+  .cpcard .cpc-eyebrow {
+    display: flex; align-items: center; gap: 20px; margin-bottom: 34px;
+    font-size: 21px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent-light, #7aa2c8);
+  }
+  .cpcard .cpc-eyebrow i {
+    display: block; width: 62px; height: 3px;
+    background: var(--accent-light, #7aa2c8); border-radius: 2px;
+  }
+  .cpcard .cpc-h2 {
+    font-family: 'Jersey 20', 'Inter', sans-serif;
+    font-size: 88px; line-height: 0.96; font-weight: 400; letter-spacing: 0.005em;
+    margin: 0 0 28px; color: var(--off-white, #f0f0f5);
+  }
+  .cpcard .cpc-lede { font-size: 33px; line-height: 1.42; color: rgba(238, 243, 248, 0.66); margin: 0; }
+
+  .cpcard .cpc-panel { flex: 1 1 auto; min-width: 0; }
+  .cpcard .cpc-frame {
+    border-radius: 14px; overflow: hidden; background: #e4edf6;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55), 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+  .cpcard .cpc-chrome {
+    display: flex; align-items: center; gap: 9px; padding: 13px 18px;
+    background: linear-gradient(180deg, #2a2a3d 0%, #21212f 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  }
+  .cpcard .cpc-chrome b { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.16); }
+  .cpcard .cpc-chrome b:nth-child(1) { background: #ff5f57; }
+  .cpcard .cpc-chrome b:nth-child(2) { background: #febc2e; }
+  .cpcard .cpc-chrome b:nth-child(3) { background: #28c840; }
+  .cpcard .cpc-chrome em {
+    margin-left: 12px; font-style: normal; font-size: 19px;
+    letter-spacing: 0.02em; color: rgba(238, 243, 248, 0.45);
+  }
+  .cpcard .cpc-frame img { display: block; width: 100%; height: auto; }
+
+  /* A tall capture is anchored to its top — the interesting rows are always first. The fade
+     makes the cut read as "there is more" rather than as a broken edge. */
+  .cpcard .cpc-frame.cpc-clip { max-height: 620px; position: relative; }
+  .cpcard .cpc-frame.cpc-clip img { object-fit: cover; object-position: top center; max-height: 580px; }
+  .cpcard .cpc-frame.cpc-clip::after {
+    content: '';
+    position: absolute; inset: auto 0 0 0; height: 130px;
+    background: linear-gradient(180deg, rgba(228,237,246,0) 0%, rgba(228,237,246,0.92) 78%, #e4edf6 100%);
+  }
+
+  .cpcard .cpc-caption {
+    display: block; margin-top: 20px; font-size: 22px; line-height: 1.45;
+    color: rgba(238, 243, 248, 0.52);
+  }
+  .cpcard .cpc-caption b { color: rgba(238, 243, 248, 0.80); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Cover ============================================================ -->
+<section class="slide cover" data-n="1">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Craft CMS 5 &nbsp;·&nbsp; Craft Commerce</div>
+      <h1 class="gradient-text">Boomerang</h1>
+      <p class="tagline">Returns that come&nbsp;back.</p>
+      <p class="lede">Returns, RMAs, restocking and a store-credit wallet that spends like a real
+        payment method.</p>
+      <div class="badges">
+        <span class="badge price"><span class="dot"></span> Lite free &nbsp;·&nbsp; Pro $129</span>
+        <span class="badge">Craft 5.3+ · Commerce 5.0+ · PHP 8.2+</span>
+      </div>
+    </div>
+    <div class="mark"><img src="assets/icon.svg" alt=""></div>
+  </div>
+</section>
+
+<!-- 2 · The whole pitch in one swap ====================================== -->
+<section class="slide statement" data-n="2">
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> The whole idea</div>
+    <div class="swap">
+      <span class="caption">What Commerce gives you for a return</span>
+      <span class="before mono">Payments::refundTransaction()</span>
+      <span class="arrow"></span>
+      <span class="caption">What Boomerang gives you</span>
+      <span class="after mono gradient-text">requested → approved → received → resolved</span>
+    </div>
+    <p class="lede">Core can refund a payment. It has no request, no approval, no receipt, no
+      restock, no exchange and no credit. Boomerang is the loop around the refund.</p>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 3 · The customer portal ============================================== -->
+<section class="slide feature" data-n="3">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> The portal</div>
+      <h2>The customer<br>asks first</h2>
+      <p class="lede">A returns portal at <span class="mono">/returns</span>, working on the first day you install it.</p>
+      <ul class="points">
+        <li><span class="tick"></span><span class="t">Guests look an order up by number and email together</span></li>
+        <li><span class="tick"></span><span class="t">A wrong number and a wrong email get the same sentence</span></li>
+        <li><span class="tick"></span><span class="t">Status pages sit behind a 32-character token, noindex</span></li>
+        <li><span class="tick"></span><span class="t">Every page is a Twig template you can copy and restyle</span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="steps">
+        <div class="step"><span class="n mono">1</span><span class="t"><b>Look up</b> — order number plus email, rate limited per IP</span></div>
+        <div class="step"><span class="n mono">2</span><span class="t"><b>Choose</b> — which lines go back, how many, and why</span></div>
+        <div class="step"><span class="n mono">3</span><span class="t"><b>Submit</b> — one verdict decides what is eligible, per line</span></div>
+        <div class="step"><span class="n mono">4</span><span class="t"><b>Track</b> — a tokenised status page with the full history</span></div>
+        <div class="step"><span class="n mono">5</span><span class="t"><b>Ship</b> — a return label, if the state offers one</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 4 · The state machine ================================================ -->
+<section class="slide feature" data-n="4">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> The state machine</div>
+      <h2>States are<br>yours to name</h2>
+      <p class="lede">The plugin reads each state's kind, not its label.</p>
+      <ul class="points">
+        <li><span class="tick"></span><span class="t">Seven states and eight reasons seeded on install</span></li>
+        <li><span class="tick"></span><span class="t">Empty transition list means anywhere: the escape hatch</span></li>
+        <li><span class="tick"></span><span class="t">Append-only history: who moved it, when, and why</span></li>
+        <li><span class="tick"></span><span class="t">They travel between environments with <span class="mono">boomerang/config</span></span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="parts">
+        <div class="part">
+          <div class="label">A state can</div>
+          <div class="said">Email &nbsp;<b>·</b>&nbsp; Restock &nbsp;<b>·</b>&nbsp; Resolve &nbsp;<b>·</b>&nbsp; Label</div>
+          <div class="also">Four switches per state, carried out on arrival, in that order.</div>
+        </div>
+        <div class="part">
+          <div class="label">Kinds, not labels</div>
+          <div class="said">requested · approved · awaiting · received</div>
+          <div class="also">Plus resolved, rejected and cancelled. Call them what your desk calls
+            them; the plugin still knows what they mean.</div>
+        </div>
+        <div class="part">
+          <div class="label">A refused refund</div>
+          <div class="said">aborts the transition</div>
+          <div class="also">Side effects run before the state is written, so an RMA is never
+            marked resolved with no money having moved.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 5 · The wallet ======================================================= -->
+<section class="slide feature" data-n="5">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Store credit</div>
+      <h2>Credit that<br>spends</h2>
+      <p class="lede">A payment method, not a discount that lies about the subtotal.</p>
+      <ul class="points">
+        <li><span class="tick"></span><span class="t">"Store credit — $40.00", beside the card at checkout</span></li>
+        <li><span class="tick"></span><span class="t">$40 against a $95 order pays $40; the card pays $55</span></li>
+        <li><span class="tick"></span><span class="t">Issued in lots, spent oldest-expiry first, under a lock</span></li>
+        <li><span class="tick"></span><span class="t">A balance is a sum over lots, never a stored number</span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="finds">
+        <div class="find warn"><span class="vol mono">$18.00</span><span class="what">Issued 4 Aug · RMA-00031</span><span class="sev">expires Fri</span></div>
+        <div class="find bad"><span class="vol mono">$40.00</span><span class="what">Issued 2 Sep · RMA-00042 · +10%</span><span class="sev">spends first</span></div>
+        <div class="find"><span class="vol mono">$25.00</span><span class="what">Issued 9 Sep · goodwill</span><span class="sev">open</span></div>
+        <div class="find spent"><span class="vol mono">$12.00</span><span class="what">Issued 3 Jun · RMA-00018</span><span class="sev">expired</span></div>
+        <div class="find spent"><span class="vol mono">$0.00</span><span class="what">Issued 1 May · RMA-00009 · drawn down</span><span class="sev">spent</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 6 · The three resolutions ============================================ -->
+<section class="slide feature" data-n="6">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Resolutions</div>
+      <h2>Money, credit<br>or goods</h2>
+      <p class="lede">What the customer gets back, and where the stock goes while they get it.</p>
+      <ul class="points">
+        <li><span class="tick"></span><span class="t">Refunds run through Commerce's own gateway transactions</span></li>
+        <li><span class="tick"></span><span class="t">An adjustment, so fulfilled stock never goes negative</span></li>
+        <li><span class="tick"></span><span class="t">Idempotent per item, however often it is retried</span></li>
+        <li><span class="tick"></span><span class="t">Snapshot prices, so a late refund is the agreed one</span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="places">
+        <div class="place">
+          <span class="chip mono">refund</span>
+          <div class="where">Back to the card</div>
+          <div class="what">A partial success is written before it throws, so the ledger is never
+            behind the gateway.</div>
+        </div>
+        <div class="place">
+          <span class="chip mono">credit</span>
+          <div class="where">Into the wallet</div>
+          <div class="what">With <span class="mono">creditBonusPercent</span>, a $50 refund becomes
+            $55 of credit — the lever that makes customers pick it.</div>
+        </div>
+        <div class="place">
+          <span class="chip mono">exchange</span>
+          <div class="where">Out as new goods</div>
+          <div class="what">A replacement order carrying a credit for what came back, so the
+            customer pays only the difference.</div>
+        </div>
+        <div class="place">
+          <span class="chip mono">restock</span>
+          <div class="where">Onto the right shelf</div>
+          <div class="what">Resellable to available, damaged to damaged, anything questionable to
+            quality control.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 7 · The returns desk on a Monday ===================================== -->
+<section class="slide feature" data-n="7">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Operations</div>
+      <h2>Runnable<br>from a cron</h2>
+      <p class="lede">The desk's whole week, in commands that fail loudly.</p>
+      <ul class="points">
+        <li><span class="tick"></span><span class="t">Expiry is enforced in the balance, not only by the cron</span></li>
+        <li><span class="tick"></span><span class="t">Uncaptured authorizations go back to their lots</span></li>
+        <li><span class="tick"></span><span class="t">A label preview prints the request without buying it</span></li>
+        <li><span class="tick"></span><span class="t">States and reasons export and import as one JSON file</span></li>
+      </ul>
+    </div>
+    <div class="term">
+      <div class="chrome"></div>
+      <div class="body mono">
+        <div><span class="prompt">$</span> <span class="cmd">php craft boomerang/returns/stalled --days=14</span></div>
+        <div><span class="warn">!</span> <span class="out">RMA-00031&nbsp;&nbsp;&nbsp;Approved&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;19 days</span></div>
+        <div><span class="warn">!</span> <span class="out">RMA-00037&nbsp;&nbsp;&nbsp;In transit&nbsp;&nbsp;&nbsp;&nbsp;16 days</span></div>
+        <span class="blank"></span>
+        <div><span class="prompt">$</span> <span class="cmd">php craft boomerang/credit/expire</span></div>
+        <div><span class="ok">✓</span> <span class="out">3 lot(s) expired, $46.00 written off.</span></div>
+        <span class="blank"></span>
+        <div><span class="prompt">$</span> <span class="cmd">php craft boomerang/credit/balance kim@example.com</span></div>
+        <div><span class="out">$83.00 across 3 lot(s), $18.00 expiring in 4 days.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 8 · control-panel screenshot — a return ============================== -->
+<section class="slide cpcard" data-n="8">
+  <div class="cpc-inner">
+    <div class="cpc-copy">
+      <div class="cpc-eyebrow"><i></i> In the control panel</div>
+      <h2 class="cpc-h2">Every return,<br>and its history</h2>
+      <p class="cpc-lede">What came back, what it was worth, and every hand it passed through.</p>
+    </div>
+    <div class="cpc-panel">
+      <figure class="cpc-frame cpc-clip">
+        <div class="cpc-chrome"><b></b><b></b><b></b><em>Boomerang returns</em></div>
+        <img src="shots/boomerang-returns.png" alt="">
+      </figure>
+      <span class="cpc-caption">The returns index with its states, the order each RMA came from, and
+        the resolution each one is heading for</span>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<!-- 9 · control-panel screenshot — credit ================================ -->
+<section class="slide cpcard" data-n="9">
+  <div class="cpc-inner">
+    <div class="cpc-copy">
+      <div class="cpc-eyebrow"><i></i> In the control panel</div>
+      <h2 class="cpc-h2">And which<br>were your fault</h2>
+      <p class="cpc-lede">A return rate that mixes the two tells you nothing.</p>
+    </div>
+    <div class="cpc-panel">
+      <figure class="cpc-frame cpc-clip">
+        <div class="cpc-chrome"><b></b><b></b><b></b><em>Boomerang analytics</em></div>
+        <img src="shots/boomerang-analytics.png" alt="">
+      </figure>
+      <span class="cpc-caption">Return rate, median days to settle and the share that were the
+        store's own fault, then every reason ranked by what it cost</span>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Boomerang</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-boomerang</div>
+</section>
+
+<script>
+  var n = new URLSearchParams(location.search).get('s');
+  if (n) {
+    document.body.classList.add('single');
+    var el = document.querySelector('.slide[data-n="' + n + '"]');
+    if (el) el.classList.add('active');
+  }
+</script>
+</body>
+</html>

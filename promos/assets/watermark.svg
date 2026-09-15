@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Boomerang">
+    <!-- Single-colour silhouette: Craft paints the CP nav icon itself, so anything with its own
+         fills comes out as a solid blob. -->
+    <path d="M26 76 51 27l25 49"
+          fill="none" stroke="#ffffff" stroke-width="15"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30 74c-14-10-16-30-4-42S60 20 72 32"
+          fill="none" stroke="#ffffff" stroke-width="4"
+          stroke-linecap="round" stroke-dasharray="7 8"/>
+</svg>
