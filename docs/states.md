@@ -25,6 +25,17 @@ Each state carries four switches, applied on arrival, in this order:
 3. **Resolve**, carrying out the refund, credit or exchange.
 4. **Offer a label**, making the label button appear on the customer's status page.
 
+## Emails
+
+A state can send the customer an email when an RMA enters it. The subject and body are Twig, run
+against the return, with the return available as `return`: `{{ return.reference }}`. Leave them
+empty to use Boomerang's own template, which a site template of the same path overrides.
+
+Because they are Twig, only **admins** can change a state's email subject and body. Anyone else
+with permission to configure states can edit the rest of the state, and their saves keep the email
+as it is. On Craft 5.9 and later, with `enableTwigSandbox` turned on, these templates are also
+rendered in Craft's Twig sandbox.
+
 ## Transitions
 
 Each state holds a list of the states it may move to. **Leave the list empty for "anywhere"** —

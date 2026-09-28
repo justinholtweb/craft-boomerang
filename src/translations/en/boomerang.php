@@ -458,4 +458,7 @@ return [
     '“{reason}” needs a photo.' => '“{reason}” needs a photo.',
     '“{reason}” needs a short explanation.' => '“{reason}” needs a short explanation.',
     '…but always when the whole order comes back' => '…but always when the whole order comes back',
+    '“{item}” can’t be returned.' => '“{item}” can’t be returned.',
+    'That item' => 'That item',
+    'Only admins can change the email subject and body, because they run as Twig.' => 'Only admins can change the email subject and body, because they run as Twig.',
 ];

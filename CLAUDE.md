@@ -5,7 +5,14 @@
 Returns, RMAs and a store-credit wallet for Craft Commerce 5. Distributed as
 `justinholtweb/craft-boomerang`. **Lite (free) + Pro ($129).**
 
-The repository directory is `craft-rma`; the package, handle and namespace are all `boomerang`.
+The package, handle and namespace are all `boomerang`. **There are two clones of this repo:**
+`~/Sites/craft-boomerang` (where releases are cut and tagged) and `~/Sites/craft-rma` (the one the
+plugin-testing harness mounts at `/var/www/craft-rma`). Work in `craft-boomerang`, then mirror it into
+`craft-rma` before running the suites — `rsync -a --delete --exclude .git --exclude tests/shots
+--exclude promos ~/Sites/craft-boomerang/ ~/Sites/craft-rma/` — or the tests run old code. After
+mirroring an *older* file back (e.g. to prove a test fails on the previous release), run
+`php craft clear-caches/compiled-templates`: rsync keeps the old mtime, and Twig reuses the newer
+compiled copy.
 
 ## Why it exists
 
@@ -120,6 +127,16 @@ land on different lots, and one that expired in between would silently vanish.
   something asks the plugins service for anything, so a script that wants the instance first should
   call `loadPlugins()` explicitly rather than depend on what it happens to touch first.
 - **A Commerce gateway has `isFrontendEnabled`, not `enabled`.**
+- **The portal must check eligibility per line, not per order.** Until 5.0.1 it checked that the
+  *order* had something returnable, then accepted whichever line IDs were posted — an excluded or
+  already-returned line included, auto-approved into a refund. `validateLines()` checks each line
+  against `Eligibility::availableQty()`, and `Returns::submit(byCustomer: true)` re-checks. CP
+  returns deliberately skip this: staff can override eligibility.
+- **Craft's `allowedFileExtensions` is not a photo allow-list** — it includes `html`, `svg` and `js`.
+  Portal photos use their own image list plus a `finfo` MIME check, and are only stored after the
+  whole request validates.
+- **State email subject/body are admin-only** (they are unsandboxed Twig). `StatesController` only
+  takes them from an admin; a non-admin save keeps them.
 - **Commerce 5 attaches a customer user to every order**, guest checkouts included — so "guest
   order" is not a way to get an order with no customer, and a guard against a missing customer has
   to be tested against an RMA whose `customerId` is null.
@@ -134,7 +151,9 @@ not `ddev exec`** — `ddev exec` re-checks that the project is running and time
 
 ```sh
 cd ~/Sites/plugin-testing
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/checks.php
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/checks.php   # 117
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/portal.php   # 6, the portal over HTTP
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/trust.php    # 2, a non-admin editing state emails
 docker exec ddev-plugin-testing-web bash -c 'find /var/www/craft-rma/src -name "*.php" -print0 | xargs -0 -n1 php -l'
 ```
 
@@ -143,9 +162,13 @@ of the run and exercises Lite in its own section. It includes real Commerce orde
 transactions, a real refund through the Dummy gateway, real inventory transactions, a real payment
 through the store-credit gateway, and the wallet's allocation under its own lock.
 
-Settings and edition changes are made **in memory** (`Settings::setAttributes()`, `$plugin->edition`),
-never through project config: project config is contended in the shared harness and a suite that
-writes it fails for reasons that have nothing to do with the plugin.
+`_fixtures.php` holds the product/order/payment/customer builders and the sibling-plugin
+workarounds; `checks.php` and `portal.php` both require it. `portal.php` and `trust.php` *persist*
+the settings they need (the HTTP side is another process) and restore them in a shutdown handler.
+
+Settings and edition changes in `checks.php` are made **in memory** (`Settings::setAttributes()`,
+`$plugin->edition`), never through project config: project config is contended in the shared
+harness and a suite that writes it fails for reasons that have nothing to do with the plugin.
 
 ### Sibling plugins that break the harness, not Boomerang
 

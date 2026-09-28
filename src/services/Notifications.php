@@ -221,10 +221,14 @@ class Notifications extends Component
      */
     private function renderObject(string $template, ReturnRequest $return): string
     {
+        // Only admins can write these (see StatesController::actionSave()). Where the site has
+        // turned on Craft's Twig sandbox (5.9+), honour it as well.
+        $view = Craft::$app->getView();
+
         try {
-            return Craft::$app->getView()->renderObjectTemplate($template, $return, [
-                'return' => $return,
-            ]);
+            return method_exists($view, 'renderSandboxedObjectTemplate')
+                ? $view->renderSandboxedObjectTemplate($template, $return, ['return' => $return])
+                : $view->renderObjectTemplate($template, $return, ['return' => $return]);
         } catch (\Throwable $e) {
             Craft::error('Boomerang could not render an email template: ' . $e->getMessage(), __METHOD__);
 

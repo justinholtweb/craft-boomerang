@@ -44,6 +44,11 @@ class PortalController extends Controller
 
     private const SESSION_ORDER = 'boomerang.orderId';
 
+    /** What a return photo may be. HEIC is what an iPhone sends by default. */
+    private const PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+
+    private const PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+
     public function beforeAction($action): bool
     {
         if (!parent::beforeAction($action)) {
@@ -174,7 +179,7 @@ class PortalController extends Controller
         }
 
         $lines = $this->postedLines();
-        $errors = $this->validateLines($lines);
+        $errors = $this->validateLines($lines, $verdict);
 
         if ($lines === [] && $errors === []) {
             $errors[] = Craft::t('boomerang', 'Choose at least one item to send back.');
@@ -189,6 +194,12 @@ class PortalController extends Controller
                 'errors' => $errors,
                 'posted' => $lines,
             ]);
+        }
+
+        // Only now, with every line accepted: a request that fails validation must not leave the
+        // customer's files behind in the volume.
+        foreach ($lines as $lineItemId => $line) {
+            $lines[$lineItemId]['photoIds'] = $this->storePhotos($this->acceptablePhotos((int)$lineItemId));
         }
 
         $return = $plugin->returns->create($order, $lines, [
@@ -364,7 +375,8 @@ class PortalController extends Controller
                 'qty' => $qty,
                 'reasonId' => isset($row['reasonId']) ? (int)$row['reasonId'] : null,
                 'comment' => isset($row['comment']) ? trim((string)$row['comment']) : null,
-                'photoIds' => $this->uploadPhotos((int)$lineItemId),
+                // Filled in by actionSubmit() once the whole request has validated.
+                'photoIds' => [],
             ];
         }
 
@@ -372,17 +384,35 @@ class PortalController extends Controller
     }
 
     /**
-     * Everything a reason insisted on.
+     * Everything eligibility and the reasons insisted on.
+     *
+     * Eligibility is checked per line, not just for the order: the form only offers returnable
+     * lines, but the request is a list of line IDs and quantities anyone can edit. Without this a
+     * customer could post an excluded or final-sale line, or one already sent back in full, and get
+     * an RMA for it — one that auto-approval would then turn into a refund.
      *
      * @param array<int, array<string, mixed>> $lines
      * @return string[]
      */
-    private function validateLines(array $lines): array
+    private function validateLines(array &$lines, \justinholtweb\boomerang\models\Eligibility $verdict): array
     {
         $plugin = Plugin::getInstance();
         $errors = [];
 
-        foreach ($lines as $line) {
+        foreach ($lines as $lineItemId => $line) {
+            $available = $verdict->availableQty((int)$lineItemId);
+
+            if ($available < 1) {
+                $errors[] = Craft::t('boomerang', '“{item}” can’t be returned.', [
+                    'item' => $verdict->getLine((int)$lineItemId)?->description ?: Craft::t('boomerang', 'That item'),
+                ]);
+
+                continue;
+            }
+
+            // Never more than can still be sent back, whatever was posted.
+            $lines[$lineItemId]['qty'] = min((int)$line['qty'], $available);
+
             $reason = $line['reasonId'] ? $plugin->reasons->getReasonById((int)$line['reasonId']) : null;
 
             if ($reason === null || !$reason->enabled || !$reason->customerSelectable) {
@@ -395,7 +425,7 @@ class PortalController extends Controller
                 $errors[] = Craft::t('boomerang', '“{reason}” needs a short explanation.', ['reason' => $reason->name]);
             }
 
-            if ($reason->requiresPhoto && ($line['photoIds'] ?? []) === []) {
+            if ($reason->requiresPhoto && $this->acceptablePhotos((int)$lineItemId) === []) {
                 $errors[] = Craft::t('boomerang', '“{reason}” needs a photo.', ['reason' => $reason->name]);
             }
         }
@@ -404,11 +434,16 @@ class PortalController extends Controller
     }
 
     /**
-     * Store whatever the customer attached to a line.
+     * The files posted for a line that are images Boomerang will keep. Nothing is stored here.
      *
-     * @return int[]
+     * The portal is anonymous and these land in an asset volume, so the rule is "a photo", not
+     * "anything Craft would accept": Craft's own list includes `html`, `svg` and `js`, and on a
+     * volume served from the site's origin any of those opens as script in a staff member's
+     * browser. The extension has to be an image one and the contents have to agree.
+     *
+     * @return UploadedFile[]
      */
-    private function uploadPhotos(int $lineItemId): array
+    private function acceptablePhotos(int $lineItemId): array
     {
         $settings = Plugin::getInstance()->getSettings();
 
@@ -416,35 +451,55 @@ class PortalController extends Controller
             return [];
         }
 
-        $volume = Craft::$app->getVolumes()->getVolumeByUid($settings->photoVolumeUid);
+        $allowed = array_intersect(
+            self::PHOTO_EXTENSIONS,
+            array_map('strtolower', Craft::$app->getConfig()->getGeneral()->allowedFileExtensions),
+        );
+        $accepted = [];
 
-        if ($volume === null) {
-            return [];
+        foreach (UploadedFile::getInstancesByName("photos.$lineItemId") as $file) {
+            if ($file->getHasError() || $file->size > $settings->maxPhotoSize * 1024) {
+                continue;
+            }
+
+            if (!in_array(strtolower($file->getExtension()), $allowed, true)) {
+                continue;
+            }
+
+            $mime = (string)(new \finfo(FILEINFO_MIME_TYPE))->file($file->tempName);
+
+            if (!in_array($mime, self::PHOTO_MIME_TYPES, true)) {
+                continue;
+            }
+
+            $accepted[] = $file;
+
+            if (count($accepted) >= max(1, $settings->maxPhotosPerItem)) {
+                break;
+            }
         }
 
-        $files = UploadedFile::getInstancesByName("photos.$lineItemId");
+        return $accepted;
+    }
 
-        if ($files === []) {
+    /**
+     * Save accepted photos as assets in the configured volume.
+     *
+     * @param UploadedFile[] $files
+     * @return int[]
+     */
+    private function storePhotos(array $files): array
+    {
+        $volume = Craft::$app->getVolumes()->getVolumeByUid(Plugin::getInstance()->getSettings()->photoVolumeUid);
+
+        if ($volume === null || $files === []) {
             return [];
         }
 
         $folderId = Craft::$app->getAssets()->getRootFolderByVolumeId($volume->id)?->id;
         $ids = [];
 
-        foreach (array_slice($files, 0, max(1, $settings->maxPhotosPerItem)) as $file) {
-            if ($file->getHasError() || $file->size > $settings->maxPhotoSize * 1024) {
-                continue;
-            }
-
-            // Craft's own allow-list, not a hand-rolled one: the portal is anonymous, and this is
-            // the only place it writes a file.
-            $extension = strtolower($file->getExtension());
-            $allowed = array_map('strtolower', Craft::$app->getConfig()->getGeneral()->allowedFileExtensions);
-
-            if ($extension === '' || !in_array($extension, $allowed, true)) {
-                continue;
-            }
-
+        foreach ($files as $file) {
             try {
                 $asset = new Asset();
                 $asset->tempFilePath = $file->tempName;

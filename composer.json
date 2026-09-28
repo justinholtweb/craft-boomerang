@@ -1,7 +1,7 @@
 {
     "name": "justinholtweb/craft-boomerang",
     "description": "Returns, RMAs and a store-credit wallet for Craft Commerce — a customer returns portal, a configurable RMA state machine, restock into inventory locations, exchange orders, refunds to store credit that spends like a payment method, carrier return labels and return analytics.",
-    "version": "5.0.0",
+    "version": "5.0.1",
     "type": "craft-plugin",
     "keywords": [
         "craftcms",

@@ -170,6 +170,14 @@ class Returns extends Component
      */
     public function submit(ReturnRequest $return, bool $byCustomer = false): bool
     {
+        // The portal already checks each line, but auto-approval turns a customer's RMA into a
+        // refund with nobody looking, so the rule lives here too: a customer can only send back
+        // what the eligibility verdict says is still returnable. Staff can override that from the
+        // CP, which is why it applies only when the customer is the one submitting.
+        if ($byCustomer && !$this->customerLinesAreReturnable($return)) {
+            return false;
+        }
+
         if (!$this->save($return)) {
             return false;
         }
@@ -188,6 +196,29 @@ class Returns extends Component
                 'message' => Craft::t('boomerang', 'Approved automatically.'),
                 'force' => true,
             ]);
+        }
+
+        return true;
+    }
+
+    private function customerLinesAreReturnable(ReturnRequest $return): bool
+    {
+        $order = $return->getOrder();
+
+        if ($order === null || $return->getItems() === []) {
+            $return->addError('items', Craft::t('boomerang', 'Choose at least one item to send back.'));
+
+            return false;
+        }
+
+        $verdict = Plugin::getInstance()->eligibility->evaluate($order);
+
+        foreach ($return->getItems() as $item) {
+            if ($item->qtyRequested > $verdict->availableQty((int)$item->lineItemId)) {
+                $return->addError('items', Craft::t('boomerang', '“{item}” can’t be returned.', ['item' => $item->description]));
+
+                return false;
+            }
         }
 
         return true;

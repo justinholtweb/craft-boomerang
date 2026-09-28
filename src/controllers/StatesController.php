@@ -85,8 +85,14 @@ class StatesController extends Controller
         $state->restockOnEnter = (bool)$request->getBodyParam('restockOnEnter');
         $state->resolveOnEnter = (bool)$request->getBodyParam('resolveOnEnter');
         $state->offerLabel = (bool)$request->getBodyParam('offerLabel');
-        $state->emailSubject = trim((string)$request->getBodyParam('emailSubject')) ?: null;
-        $state->emailBody = trim((string)$request->getBodyParam('emailBody')) ?: null;
+        // The subject and body are Twig, run on every state change with the whole of Craft in
+        // reach, so only an admin may change them — the same rule Craft applies to its own
+        // Twig-bearing settings. Anyone else with this permission can edit the rest of the state,
+        // and their save keeps the templates as they were.
+        if (Craft::$app->getUser()->getIsAdmin()) {
+            $state->emailSubject = trim((string)$request->getBodyParam('emailSubject')) ?: null;
+            $state->emailBody = trim((string)$request->getBodyParam('emailBody')) ?: null;
+        }
         $state->transitions = array_values(array_filter((array)$request->getBodyParam('transitions', [])));
 
         if (!$plugin->states->saveState($state)) {

@@ -27,6 +27,18 @@ error message is identical on purpose, and there is a test that asserts it.
 
 The lookup is rate limited per IP per hour on top of that.
 
+## What the portal will accept
+
+The request form only offers lines that can be returned, but a form can be edited, so the portal
+checks every submitted line again against the eligibility verdict. An excluded SKU, a final-sale
+product type, or a line that has already been sent back in full is refused, even if it's posted
+directly. A quantity above what can still be returned is capped.
+
+Photos must be images: JPEG, PNG, GIF, WebP or HEIC. The file's contents are checked as well as its
+extension, and anything else is dropped. Photos are only saved once the whole request has been
+accepted, so a refused request leaves nothing in the volume. The volume photos go to is set in the
+plugin settings. A volume without public URLs keeps customers' photos private.
+
 ## Status pages
 
 A return's status page sits behind a **32-character token**, compared in constant time, and is

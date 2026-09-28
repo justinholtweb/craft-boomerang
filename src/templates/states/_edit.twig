@@ -98,10 +98,15 @@
 
     <hr>
 
+    {% if not currentUser.admin %}
+        <p class="light">{{ 'Only admins can change the email subject and body, because they run as Twig.'|t('boomerang') }}</p>
+    {% endif %}
+
     {{ forms.textField({
         label: 'Email subject'|t('boomerang'),
         name: 'emailSubject',
         value: state.emailSubject,
+        disabled: not currentUser.admin,
         instructions: 'Leave empty for the default. Twig against the return: `{{ return.reference }}`.'|t('boomerang')|md(inlineOnly=true),
     }) }}
 
@@ -110,6 +115,7 @@
         name: 'emailBody',
         value: state.emailBody,
         rows: 8,
+        disabled: not currentUser.admin,
         instructions: 'Leave empty to use Boomerang’s own template, which a site template of the same path overrides.'|t('boomerang'),
     }) }}
 
