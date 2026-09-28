@@ -3,7 +3,7 @@
  * Remove everything `seed.php` created.
  *
  *     docker exec -w /var/www/html ddev-plugin-testing-web \
- *         php /var/www/craft-rma/tests/shots/teardown.php
+ *         php /var/www/craft-boomerang/tests/shots/teardown.php
  *
  * Exact rather than approximate: the seed tags everything it makes — SKUs start `BMR-`, emails
  * end `@boomerang.shots` — and nothing here deletes on a looser match than that.

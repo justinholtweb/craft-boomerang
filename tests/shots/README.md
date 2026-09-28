@@ -11,20 +11,16 @@ history at all.
 
 ## Running it
 
-The repo is mounted into the container as **`/var/www/craft-rma`**, not `craft-boomerang` — the
-mount list in `plugin-testing/.ddev/docker-compose.plugins.yaml` predates the rename, and the vendor
-symlink still points there. Edit the canonical copy in `~/Sites/craft-boomerang/tests/shots/` and
-copy it across before running:
+The repo is mounted into the container as **`/var/www/craft-boomerang`**, and the harness installs
+the plugin from there, so these scripts run in place:
 
 ```sh
-cp ~/Sites/craft-boomerang/tests/shots/*.php ~/Sites/craft-rma/tests/shots/
-
 # `craft-csr` fatals at class load on any CP page that enumerates element types, which is all of
 # them. Off for the capture, back on afterwards.
 docker exec -w /var/www/html ddev-plugin-testing-web php craft plugin/disable csr
 
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/shots/seed.php
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/shots/urls.php
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/shots/seed.php
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/shots/urls.php
 
 # Re-point the two detail URLs in specs/boomerang.json to what urls.php just printed, then:
 cd ~/Sites/plugin-shots

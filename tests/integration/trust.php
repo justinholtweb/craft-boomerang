@@ -2,7 +2,7 @@
 /**
  * Who may write the Twig in a state's email — checked over HTTP.
  *
- *     docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/trust.php
+ *     docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/integration/trust.php
  *
  * A state's email subject and body are object templates, run on every state change with the whole
  * of Craft in reach. Until 5.0.1 anyone with "configure states and reasons" could set them. This

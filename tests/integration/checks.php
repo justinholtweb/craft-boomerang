@@ -4,7 +4,7 @@
  *
  * Run inside the plugin-testing container, from the site root:
  *
- *     ddev exec php /var/www/craft-rma/tests/integration/checks.php
+ *     ddev exec php /var/www/craft-boomerang/tests/integration/checks.php
  *
  * Covers what unit fixtures cannot: real Commerce orders and transactions, a real refund through a
  * gateway, real inventory transactions, and the wallet's allocation under its own lock. Idempotent

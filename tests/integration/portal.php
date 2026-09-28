@@ -2,7 +2,7 @@
 /**
  * The anonymous returns portal, driven over HTTP the way a customer (or a script) would.
  *
- *     docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/portal.php
+ *     docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/integration/portal.php
  *
  * `checks.php` exercises the services; this posts the portal's own forms, because what the portal
  * accepts is decided in its controller — which lines, how many, and which files. It persists the

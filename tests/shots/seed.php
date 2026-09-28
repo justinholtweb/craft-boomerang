@@ -5,7 +5,7 @@
  * Run inside the container, from the site root:
  *
  *     docker exec -w /var/www/html ddev-plugin-testing-web \
- *         php /var/www/craft-rma/tests/shots/seed.php
+ *         php /var/www/craft-boomerang/tests/shots/seed.php
  *
  * Unlike `tests/integration/checks.php`, this is **not** self-cleaning: the whole point is to
  * leave a returns desk standing so the control panel has something to show. `teardown.php`

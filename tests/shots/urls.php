@@ -3,7 +3,7 @@
  * Print the control-panel URLs the capture spec needs.
  *
  *     docker exec -w /var/www/html ddev-plugin-testing-web \
- *         php /var/www/craft-rma/tests/shots/urls.php
+ *         php /var/www/craft-boomerang/tests/shots/urls.php
  *
  * Element IDs are not stable across a teardown and re-seed — every run makes new elements — so
  * `~/Sites/plugin-shots/specs/boomerang.json` has to be re-pointed whenever the seed is rebuilt.

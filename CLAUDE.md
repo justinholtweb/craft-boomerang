@@ -5,14 +5,10 @@
 Returns, RMAs and a store-credit wallet for Craft Commerce 5. Distributed as
 `justinholtweb/craft-boomerang`. **Lite (free) + Pro ($129).**
 
-The package, handle and namespace are all `boomerang`. **There are two clones of this repo:**
-`~/Sites/craft-boomerang` (where releases are cut and tagged) and `~/Sites/craft-rma` (the one the
-plugin-testing harness mounts at `/var/www/craft-rma`). Work in `craft-boomerang`, then mirror it into
-`craft-rma` before running the suites — `rsync -a --delete --exclude .git --exclude tests/shots
---exclude promos ~/Sites/craft-boomerang/ ~/Sites/craft-rma/` — or the tests run old code. After
-mirroring an *older* file back (e.g. to prove a test fails on the previous release), run
-`php craft clear-caches/compiled-templates`: rsync keeps the old mtime, and Twig reuses the newer
-compiled copy.
+The package, handle and namespace are all `boomerang`, and the repository is `~/Sites/craft-boomerang`,
+mounted in the plugin-testing harness at `/var/www/craft-boomerang`. (Until 5.0.1 there was a second
+clone, `craft-rma`, which the harness mounted instead — tests there silently ran an older copy. It is
+gone; if you find a reference to it, it is stale.)
 
 ## Why it exists
 
@@ -151,10 +147,10 @@ not `ddev exec`** — `ddev exec` re-checks that the project is running and time
 
 ```sh
 cd ~/Sites/plugin-testing
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/checks.php   # 117
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/portal.php   # 6, the portal over HTTP
-docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-rma/tests/integration/trust.php    # 2, a non-admin editing state emails
-docker exec ddev-plugin-testing-web bash -c 'find /var/www/craft-rma/src -name "*.php" -print0 | xargs -0 -n1 php -l'
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/integration/checks.php   # 117
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/integration/portal.php   # 6, the portal over HTTP
+docker exec -w /var/www/html ddev-plugin-testing-web php /var/www/craft-boomerang/tests/integration/trust.php    # 2, a non-admin editing state emails
+docker exec ddev-plugin-testing-web bash -c 'find /var/www/craft-boomerang/src -name "*.php" -print0 | xargs -0 -n1 php -l'
 ```
 
 **117 checks, 0 failures**, idempotent and self-cleaning. It switches to Pro in memory for the bulk
